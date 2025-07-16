@@ -1,19 +1,5 @@
 
-
-import streamlit as st
-from datetime import datetime, timedelta
-import pytz
-import time
-
-# --- DATA (As provided in the prompt) ---
-# In a real app, this would come from an API call
-null = None
-import streamlit as st
-from datetime import datetime, timedelta
-import pytz
-
-# --- MOCK DATA (As provided in the original script) ---
-# In a real app, this would come from an API call
+# Sample flight data (your existing data)
 flight_data = {
     "pagination": {
         "limit": 100,
@@ -45,7 +31,7 @@ flight_data = {
                 "iata": "ACC",
                 "icao": "DGAA",
                 "terminal": "3",
-                "gate": null,
+                "gate": "B15",
                 "baggage": null,
                 "scheduled": "2025-07-11T11:20:00+00:00",
                 "delay": null,
@@ -91,7 +77,7 @@ flight_data = {
                 "iata": "ACC",
                 "icao": "DGAA",
                 "terminal": "3",
-                "gate": null,
+                "gate": "B15",
                 "baggage": null,
                 "scheduled": "2025-07-10T11:20:00+00:00",
                 "delay": null,
@@ -116,38 +102,236 @@ flight_data = {
         }
     ]
 }
-#
-# user_info = {
-#     'QTR706': {'name': 'John Does'}
-# }
 
 
-# --- SESSION STATE INITIALIZATION ---
-if 'flight_statuses' not in st.session_state:
-    st.session_state.flight_statuses = {flight['flight']['iata']: flight['flight_status'] for flight in flight_data['data']}
-if 'notifications' not in st.session_state:
-    st.session_state.notifications = []
+@st.cache_data
+def load_excel_data():
+    """Load and process the Excel file containing passenger information."""
+    # Try to read the Excel file
+    df = pd.read_excel('sample - FLNA Travel Info Data.xlsx')
 
-# --- UI & HELPER FUNCTIONS ---
+    # Clean column names (remove extra spaces, standardize)
+    df.columns = df.columns.str.strip().str.replace(' ', '_').str.lower()
 
-def check_for_status_changes():
+    # Expected columns (adjust based on your actual Excel structure)
+    # ['name', 'flight_number', 'departure_date', 'seat', 'class', 'phone', 'email']
+
+    # If the actual columns are different, map them here
+    # For example, if your Excel has different column names:
+    column_mapping = {
+        'passenger_name': 'name',
+        'flight_no': 'flight_number',
+        'travel_date': 'departure_date',
+        'seat_number': 'seat',
+        'travel_class': 'class',
+        'phone_number': 'phone',
+        'email_address': 'email'
+    }
+
+    # Apply column mapping if needed
+    df = df.rename(columns=column_mapping)
+
+    # Ensure flight_number is string and clean it
+    if 'flight_number' in df.columns:
+        df['flight_number'] = df['flight_number'].astype(str).str.strip().str.upper()
+
+    # Parse dates if they exist
+    if 'departure_date' in df.columns:
+        df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+    return df
+
+
+import pyperclip
+import subprocess
+import sys
+
+
+def copy_to_clipboard(text):
     """
-    Monitors flight statuses and generates toast notifications on change.
-    In a real app, you'd periodically fetch new data. Here, we simulate a change.
+    Copy string to clipboard using pyperclip (cross-platform).
+
+    Args:
+        text (str): String to copy to clipboard
+
+    Returns:
+        bool: True if successful, False otherwise
     """
-    for flight in flight_data['data']:
+    try:
+        pyperclip.copy(text)
+        print(f"Copied {len(text)} characters to clipboard")
+        return True
+    except Exception as e:
+        print(f"Error copying to clipboard: {e}")
+        return False
+
+def excel_to_json_string():
+    df = load_excel_data()
+    # Convert to JSON string with no indentation or newlines
+    json_string = df.to_json(orient='records', date_format='iso')
+
+    # Print the raw JSON
+    print(json_string)
+    copy_to_clipboard(json_string.replace('"', '\\"'))
+    return json_string
+
+
+def load_excel_from_env():
+    """
+    Load Excel data from EXCEL_SHEET environment variable.
+
+    Returns:
+        pd.DataFrame: DataFrame loaded from the environment variable JSON string
+
+    Raises:
+        ValueError: If EXCEL_SHEET environment variable is not set or empty
+        json.JSONDecodeError: If the JSON string is invalid
+    """
+    # Get the JSON string from environment variable
+    json_string = os.getenv('EXCEL_SHEET')
+
+    if not json_string:
+        raise ValueError("EXCEL_SHEET environment variable is not set or is empty")
+
+    try:
+        # Parse JSON string to Python objects
+        data = json.loads(json_string)
+
+        # Convert to DataFrame
+        df = pd.DataFrame(data)
+
+        # If departure_date exists, convert it back to datetime
+        if 'departure_date' in df.columns:
+            df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+
+        print(f"Successfully loaded DataFrame with shape: {df.shape}")
+        print(f"Columns: {list(df.columns)}")
+
+        return df
+
+    except json.JSONDecodeError as e:
+        raise json.JSONDecodeError(f"Invalid JSON in EXCEL_SHEET environment variable: {e}")
+
+
+def json_string_to_dataframe(json_string):
+    """
+    Convert JSON string to pandas DataFrame.
+
+    Args:
+        json_string (str): JSON string representation of data
+
+    Returns:
+        pd.DataFrame: DataFrame loaded from JSON string
+    """
+    # Parse JSON string to Python objects
+    data = json.loads(json_string)
+
+    # Convert to DataFrame
+    df = pd.DataFrame(data)
+
+    # If departure_date exists, convert it back to datetime
+    if 'departure_date' in df.columns:
+        df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+
+    return df
+
+def get_flight_numbers_set(passenger_df):
+    """Create a set of unique flight numbers from the passenger data."""
+    if 'flight_number' in passenger_df.columns:
+        return set(passenger_df['flight_number'].dropna().unique())
+    return set()
+
+
+def get_passengers_for_flight(flight_number, flight_date, passenger_df):
+    """Get all passengers for a specific flight and date."""
+    if passenger_df.empty:
+        return []
+
+    # Filter by flight number
+    print(passenger_df, 'passenger_dfpassenger_df')
+    mask = flight_number in passenger_df['arrival_info']
+
+    # Also filter by date if available
+    if 'departure_date' in passenger_df.columns:
+        flight_date_obj = datetime.fromisoformat(flight_date).date()
+        mask = mask & (passenger_df['departure_date'].dt.date == flight_date_obj)
+
+    return passenger_df[mask].to_dict('records')
+
+
+def create_maps_link(airport_name, terminal, gate):
+    """Create a Google Maps link for the airport gate."""
+    if gate and gate != 'N/A':
+        query = f"{airport_name} airport terminal {terminal} gate {gate}"
+    else:
+        query = f"{airport_name} airport terminal {terminal}"
+
+    # URL encode the query
+    import urllib.parse
+    encoded_query = urllib.parse.quote(query)
+    return f"https://www.google.com/maps/search/?api=1&query={encoded_query}"
+
+
+def search_flights(query, flights, passenger_df):
+    """Enhanced search function that searches through multiple fields."""
+    if not query:
+        return flights
+
+    query = query.lower().strip()
+    filtered_flights = []
+
+    for flight in flights:
+        # Search in flight data
+        flight_text = " ".join([
+            flight['flight']['iata'],
+            flight['flight']['number'],
+            flight['airline']['name'],
+            flight['departure']['airport'],
+            flight['arrival']['airport'],
+            flight['departure']['iata'],
+            flight['arrival']['iata'],
+            flight['flight_status'],
+            flight['flight_date']
+        ]).lower()
+
+        # Search in passenger data for this flight
+        passengers = get_passengers_for_flight(
+            flight['flight']['iata'],
+            flight['flight_date'],
+            passenger_df
+        )
+
+        passenger_text = ""
+        if passengers:
+            passenger_text = " ".join([
+                                          str(p.get('name', '')) + ' ' +
+                                          str(p.get('seat', '')) + ' ' +
+                                          str(p.get('class', '')) + ' ' +
+                                          str(p.get('phone', '')) + ' ' +
+                                          str(p.get('email', '')) + ' '                                    for p in passengers
+            ]).lower()
+
+        # Date-based search
         try:
-            current_status = flight['flight_status']
-            previous_status = st.session_state.flight_statuses[flight['flight']['iata']]
+            flight_date = datetime.fromisoformat(flight['flight_date'])
+            date_text = " ".join([
+                flight_date.strftime('%B'),  # Month name
+                flight_date.strftime('%b'),  # Short month
+                flight_date.strftime('%A'),  # Day of week
+                flight_date.strftime('%a'),  # Short day
+                str(flight_date.day),
+                str(flight_date.year)
+            ]).lower()
+        except:
+            date_text = ""
 
-            if current_status != previous_status and flight['flight']['iata'] in st.session_state.get('subscribed_flights', []):
-                user_name = flight['arriva']['airport']
-                message = f"🚨 Status Change for {user_name}: Flight {flight['flight']['iata']} is now {current_status.upper()}!"
-                st.toast(message, icon='✈️')
-                st.session_state.notifications.append(f"{datetime.now().strftime('%H:%M:%S')}: {message}")
-                st.session_state.flight_statuses[flight['flight']['iata']] = current_status
-        except (IndexError, KeyError) as e:
-            st.error(f"Error checking status changes: {e}")
+        # Combine all searchable text
+        searchable_text = f"{flight_text} {passenger_text} {date_text}"
+
+        # Check if query matches any part of the searchable text
+        if query in searchable_text:
+            filtered_flights.append(flight)
+
+    return filtered_flights
 
 
 def get_flight_progress(flight):
@@ -171,40 +355,28 @@ def get_flight_progress(flight):
     return min(max(progress, 0), 100)
 
 
-from datetime import datetime, timezone
-import pytz
-
-
 def get_precise_landing_status(flight):
-    """
-    Calculates the precise landing status string using local time zone.
-    Shows time until landing for future flights, or time since landing for completed flights.
-    """
+    """Calculate the precise landing status string using local time zone."""
     status = flight['flight_status']
-
-    # Get the current time in local timezone
     local_tz = datetime.now().astimezone().tzinfo
     now_local = datetime.now(local_tz)
 
-    # If the flight has landed, calculate how long ago
     if status == 'landed' and flight['arrival']['actual']:
         landed_time_utc = datetime.fromisoformat(flight['arrival']['actual'])
-
-        # Convert to local timezone if it's in UTC
         if landed_time_utc.tzinfo is None:
             landed_time_utc = landed_time_utc.replace(tzinfo=timezone.utc)
 
         landed_time_local = landed_time_utc.astimezone(local_tz)
         time_since_landing = now_local - landed_time_local
 
-        # Handle negative time (shouldn't happen for landed flights, but just in case)
         if time_since_landing.total_seconds() < 0:
             return "Landing time inconsistent"
 
-        # Breakdown the timedelta into days, hours, and minutes
-        days = time_since_landing.days
-        hours, remainder = divmod(int(time_since_landing.total_seconds()), 3600)
-        minutes, _ = divmod(remainder, 60)
+        # Fix: Use total_seconds() and properly calculate days, hours, minutes
+        total_seconds = int(time_since_landing.total_seconds())
+        days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
+        hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
+        minutes, _ = divmod(remainder, 60)  # 60 seconds in a minute
 
         parts = []
         if days > 0:
@@ -219,23 +391,22 @@ def get_precise_landing_status(flight):
 
         return f"**Landed:** {', '.join(parts)} ago"
 
-    # If the flight hasn't landed yet, show time until landing
     elif flight['arrival']['scheduled']:
         scheduled_time_utc = datetime.fromisoformat(flight['arrival']['scheduled'])
-
-        # Convert to local timezone if it's in UTC
         if scheduled_time_utc.tzinfo is None:
             scheduled_time_utc = scheduled_time_utc.replace(tzinfo=timezone.utc)
 
         scheduled_time_local = scheduled_time_utc.astimezone(local_tz)
         time_until_landing = scheduled_time_local - now_local
 
-        # If the scheduled time has passed but flight hasn't landed
         if time_until_landing.total_seconds() < 0:
             time_overdue = now_local - scheduled_time_local
-            days = time_overdue.days
-            hours, remainder = divmod(int(time_overdue.total_seconds()), 3600)
-            minutes, _ = divmod(remainder, 60)
+
+            # Fix: Use total_seconds() and properly calculate days, hours, minutes
+            total_seconds = int(time_overdue.total_seconds())
+            days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
+            hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
+            minutes, _ = divmod(remainder, 60)  # 60 seconds in a minute
 
             parts = []
             if days > 0:
@@ -248,10 +419,11 @@ def get_precise_landing_status(flight):
             overdue_text = ', '.join(parts) if parts else "just now"
             return f"**Overdue:** {overdue_text} past scheduled landing"
 
-        # Calculate time until landing
-        days = time_until_landing.days
-        hours, remainder = divmod(int(time_until_landing.total_seconds()), 3600)
-        minutes, _ = divmod(remainder, 60)
+        # Fix: Use total_seconds() and properly calculate days, hours, minutes
+        total_seconds = int(time_until_landing.total_seconds())
+        days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
+        hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
+        minutes, _ = divmod(remainder, 60)  # 60 seconds in a minute
 
         parts = []
         if days > 0:
@@ -266,7 +438,6 @@ def get_precise_landing_status(flight):
         else:
             time_text = f"landing in {', '.join(parts)}"
 
-        # Show local time and date
         local_time_str = scheduled_time_local.strftime('%I:%M %p')
         local_date_str = scheduled_time_local.strftime('%b %d, %Y')
 
@@ -275,17 +446,46 @@ def get_precise_landing_status(flight):
     return "Landing time not available"
 
 
-import streamlit as st
-from datetime import datetime, timedelta
-import pytz  # Required for timezone-aware datetime objects
+def get_formatted_time_string(dt_str, prefix=""):
+    """Format an ISO datetime string into a full date/time with relative description."""
+    if not dt_str:
+        return "N/A"
 
+    flight_time = datetime.fromisoformat(dt_str)
+    now = datetime.now(pytz.utc)
+    delta = now - flight_time
 
-def display_flight_card(flight, user_name):
-    """
-    Displays a single flight information card using Streamlit's native elements.
-    """
+    absolute_time = flight_time.strftime('%d %b %Y %I:%M %p')
+
+    tense = "ago" if delta.total_seconds() > 0 else "from now"
+    total_seconds = abs(delta.total_seconds())
+
+    # Fix: Properly calculate days, hours, minutes to avoid overflow
+    if total_seconds < 60:
+        value = int(total_seconds)
+        unit = "second"
+    elif total_seconds < 3600:
+        value = int(total_seconds / 60)
+        unit = "minute"
+    elif total_seconds < 86400:
+        value = int(total_seconds / 3600)
+        unit = "hour"
+    else:
+        value = int(total_seconds / 86400)
+        unit = "day"
+
+    relative_time = f"{value} {unit}{'s' if value != 1 else ''} {tense}"
+    return f"{prefix}{absolute_time} ({relative_time})"
+
+def display_flight_card(flight, passenger_df):
+    """Display a flight information card with passenger details."""
     status = flight['flight_status']
-    iata = flight['flight']['iata']
+    passengers = get_passengers_for_flight(
+        flight['flight']['iata'],
+        flight['flight_date'],
+        passenger_df
+    )
+
     status_color = "gray"
     glowing_css = ""
 
@@ -326,84 +526,134 @@ def display_flight_card(flight, user_name):
             font-size: 1.2em;
             {glowing_css}
         }}
+        .passenger-hover {{
+            position: relative;
+            display: inline-block;
+        }}
+        .passenger-hover .passenger-list {{
+            visibility: hidden;
+            width: 300px;
+            background-color: #2a2a2a;
+            color: white;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid #444;
+        }}
+        .passenger-hover:hover .passenger-list {{
+            visibility: visible;
+            opacity: 1;
+        }}
+        .maps-button {{
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }}
+        .maps-button:hover {{
+            background-color: #45a049;
+            text-decoration: none;
+            color: white;
+        }}
     </style>
     """, unsafe_allow_html=True)
 
     with st.container():
         st.markdown('<div class="card-container">', unsafe_allow_html=True)
+
+        # Header with airline name as main title
         col1, col2 = st.columns([3, 1])
         with col1:
-            st.subheader(user_name)
-            st.markdown(f"**{flight['airline']['name']}** - `{flight['flight']['iata']}`")
+            st.title(f"{flight['airline']['name']}")
+            st.markdown(f"**Flight:** `{flight['flight']['iata']}` | **Date:** {flight['flight_date']}")
         with col2:
             st.markdown(f'<p class="status-text">{status.upper()}</p>', unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.warning(get_precise_landing_status(flight))  # Assuming this helper function exists
+        # Passenger count and hover menu
+        if passengers:
+            passenger_names = [p.get('name', 'Unknown') for p in passengers]
+            passenger_details = ""
+            for p in passengers:
+                passenger_details += f"• {p.get('name', 'Unknown')} - Seat {p.get('seat', 'N/A')} ({p.get('class', 'N/A')})<br>"
 
+            st.markdown(f"""
+            <div class="passenger-hover">
+                <span style="color: #4CAF50; font-weight: bold; cursor: pointer;">
+                    👥 {len(passengers)} Passenger{'s' if len(passengers) > 1 else ''} (hover for details)
+                </span>
+                <div class="passenger-list">
+                    <strong>Passengers on this flight:</strong><br><br>
+                    {passenger_details}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("👥 No passengers from your list on this flight")
+
+        st.markdown("---")
+        st.warning(get_precise_landing_status(flight))
+
+        # Flight route with maps buttons
         col1, col2, col3 = st.columns([2, 1, 2])
         with col1:
             st.markdown(f"**From:** `{flight['departure']['iata']}`")
             st.write(flight['departure']['airport'])
-            st.caption(f"Gate: {flight['departure']['gate'] or 'N/A'}")
-        with col2:
-            st.image("travel_24dp_FFFFFF_FILL0_wght200_GRAD-25_opsz20.svg", width=30)
-        with col3:
-            st.markdown(f"**To:** `{flight['arrival']['iata']}`", )
-            st.write(flight['arrival']['airport'])
-            st.caption(f"Gate: {flight['arrival']['gate'] or 'N/A'}")
+            gate_info = f"Gate: {flight['departure']['gate'] or 'N/A'}"
 
-        progress = get_flight_progress(flight)  # Assuming this helper function exists
+            if flight['departure']['gate'] and flight['departure']['gate'] != 'N/A':
+                maps_url = create_maps_link(
+                    flight['departure']['airport'],
+                    flight['departure']['terminal'],
+                    flight['departure']['gate']
+                )
+                st.markdown(f'{gate_info} <a href="{maps_url}" target="_blank" class="maps-button" style="background-color: #000; color: #fff; font-weight: bold">📍 Open Maps</a>',
+                            unsafe_allow_html=True)
+            else:
+                st.caption(gate_info)
+
+        with col2:
+            st.markdown("✈️", unsafe_allow_html=True)
+
+        with col3:
+            st.markdown(f"**To:** `{flight['arrival']['iata']}`")
+            st.write(flight['arrival']['airport'])
+            gate_info = f"Gate: {flight['arrival']['gate'] or 'N/A'}"
+
+            if flight['arrival']['gate'] and flight['arrival']['gate'] != 'N/A':
+                maps_url = create_maps_link(
+                    flight['arrival']['airport'],
+                    flight['arrival']['terminal'],
+                    flight['arrival']['gate']
+                )
+                st.markdown(f'{gate_info} <a href="{maps_url}" target="_blank" class="maps-button" style="background-color: #000; color: #fff; font-weight: bold; margin-bottom: 9px;">📍 Open Maps</a>',
+                            unsafe_allow_html=True)
+            else:
+                st.caption(gate_info)
+
+        # Progress bar
+        progress = get_flight_progress(flight)
         st.progress(int(progress))
         st.markdown(f"**Flight Progress:** {int(progress)}%")
 
-        # --- MODIFICATION START ---
-
-        def get_formatted_time_string(dt_str, prefix=""):
-            """
-            Formats an ISO datetime string into a full date/time with a relative description.
-            Example: "16 May 2028 05:30 PM (2 hours ago)"
-            """
-            if not dt_str:
-                return "N/A"
-
-            flight_time = datetime.fromisoformat(dt_str)
-            now = datetime.now(pytz.utc)
-            delta = now - flight_time
-
-            # Format the absolute time, e.g., "16 May 2028 05:30 PM"
-            absolute_time = flight_time.strftime('%d %b %Y %I:%M %p')
-
-            # Determine the relative time
-            tense = "ago" if delta.total_seconds() > 0 else "from now"
-            seconds = abs(delta.total_seconds())
-
-            if seconds < 3600:  # Less than an hour
-                value = int(seconds / 60)
-                unit = "minute"
-            elif seconds < 86400:  # Less than a day
-                value = int(seconds / 3600)
-                unit = "hour"
-            else:  # Days
-                value = int(seconds / 86400)
-                unit = "day"
-
-            relative_time = f"{value} {unit}{'s' if value != 1 else ''} {tense}"
-
-            return f"{prefix}{absolute_time} ({relative_time})"
-
-        # Generate the formatted strings for takeoff and landing
+        # Time information
         takeoff_time = get_formatted_time_string(flight['departure']['actual'])
-
         landing_time = get_formatted_time_string(
             flight['arrival']['actual'] or flight['arrival']['scheduled'],
             prefix="Scheduled: " if not flight['arrival']['actual'] else ""
         )
-
         st.info(f"**Take Off:** {takeoff_time} | **Landing:** {landing_time}")
 
-        # --- MODIFICATION END ---
-
+        # Delay information
         delay = flight['departure']['delay']
         if delay and delay > 0:
             st.error(f":red[This flight was **delayed** by {delay} minutes.]")
@@ -414,45 +664,142 @@ def display_flight_card(flight, user_name):
 
 
 # --- MAIN APP ---
-st.set_page_config(page_title="Live Flight Tracker", layout="wide", initial_sidebar_state="expanded")
 
-# --- CHECK FOR NOTIFICATIONS ---
-check_for_status_changes()
+# Load passenger data
+passenger_df = load_excel_data()
 
-# --- SIDEBAR ---
-# with st.sidebar:
-#     st.header("Notification Manager")
-#     st.write("Enable real-time alerts for status changes.")
-#     subscribed_flights = st.multiselect(
-#         "Subscribe to flights:",
-#         options=list(user_info.keys()),
-#         format_func=lambda iata: f"{user_info[iata]['name']} ({iata})",
-#         key='subscribed_flights'
-#     )
-#     st.success(f"You are subscribed to {len(subscribed_flights)} flight(s).")
-#
-#     st.markdown("---")
-#     st.subheader("Notification Log")
-#     if st.session_state.notifications:
-#         log_container = st.container()
-#         for notif in reversed(st.session_state.notifications):
-#             log_container.write(notif)
-#     else:
-#         st.write("No new notifications.")
+# Create set of flight numbers (as requested)
+flight_numbers_set = get_flight_numbers_set(passenger_df)
 
 # --- MAIN PAGE CONTENT ---
 st.title("First Love Church - Live Flight Tracker")
-search_query = st.text_input("Search for a user by name:", placeholder="Search by airport, delayed flights, names and so on")
 
-# --- RENDER FLIGHT CARDS ---
-# filtered_users = {iata: data for iata, data in user_info.items() if search_query.lower() in data['name'].lower()}
+st.title("📊 Flight Statistics")
 
+# Enhanced search with examples
+st.markdown(
+    "**Search Examples:** Try searching for names, flight numbers (ET921), dates (July 11, Monday), airports (ADD, ACC), or status (active, landed)")
+search_query = st.text_input(
+    "Search flights:",
+    placeholder="Search by passenger name, flight number, date, airport, etc."
+)
 
-filtered_flights = [a for a in flight_data['data']]
+# Filter flights to only show those with passengers from Excel
+relevant_flights = []
+for flight in flight_data['data']:
+    passengers = get_passengers_for_flight(
+        flight['flight']['iata'],
+        flight['flight_date'],
+        passenger_df
+    )
+    # if passengers:  # Only include flights with passengers from our Excel
+    relevant_flights.append(flight)
+
+# Apply search filter
+filtered_flights = search_flights(search_query, relevant_flights, passenger_df)
+if not passenger_df.empty:
+    # Left-aligned columns with metrics
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    with col1:
+        st.markdown(f"<div style='text-align: left; color: #ffffff66'><strong>Total Passengers:</strong> {len(passenger_df)}</div>",
+                    unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<div style='text-align: left; color: #ffffff66'><strong>Unique Flights:</strong> {len(flight_numbers_set)}</div>",
+                    unsafe_allow_html=True)
+    with col3:
+        st.markdown(
+            f"<div style='text-align: left; color: #ffffff66'><strong>Active Flights:</strong> {len([f for f in relevant_flights if f['flight_status'] == 'active'])}</div>",
+            unsafe_allow_html=True)
+    with col4:
+        st.markdown(
+            f"<div style='text-align: left; color: #ffffff66'><strong>Landed Flights:</strong> {len([f for f in relevant_flights if f['flight_status'] == 'landed'])}</div>",
+            unsafe_allow_html=True)
+
+    # Show passenger distribution with searchable dropdown
+    if 'arrival_info' in passenger_df.columns:
+        st.markdown("### Passengers per Flight")
+
+        # Get flight counts
+        flight_counts = passenger_df['arrival_info'].str.split(',').explode().str.strip().value_counts()
+
+        # Create searchable dropdown for flight selection
+        flight_options = ['All Flights'] + list(flight_counts.index)
+        selected_flight = st.selectbox(
+            "Search and select a flight:",
+            options=flight_options,
+            index=0,
+            help="Type to search for a specific flight number"
+        )
+
+        # Display results based on selection
+        if selected_flight == 'All Flights':
+            # Show all flights in a nicely formatted table
+            st.markdown("**All Flight Passenger Counts:**")
+
+            # Create a DataFrame for better display
+            flight_data = []
+            for flight, count in flight_counts.items():
+                flight_data.append({
+                    'Flight Number': flight,
+                    'Passengers': count,
+                    'Status': 'Multiple' if count > 1 else 'Single'
+                })
+
+            flight_df = pd.DataFrame(flight_data)
+
+            # Display as a styled table
+            st.dataframe(
+                flight_df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    'Flight Number': st.column_config.TextColumn(
+                        'Flight Number',
+                        width='medium'
+                    ),
+                    'Passengers': st.column_config.NumberColumn(
+                        'Passengers',
+                        width='small'
+                    ),
+                    'Status': st.column_config.TextColumn(
+                        'Status',
+                        width='small'
+                    )
+                }
+            )
+        else:
+            # Show details for selected flight
+            passenger_count = flight_counts[selected_flight]
+            st.markdown(f"**{selected_flight}:** {passenger_count} passenger{'s' if passenger_count > 1 else ''}")
+
+            # Show passenger details for this flight
+            flight_passengers = passenger_df[passenger_df['arrival_info'].str.contains(selected_flight, na=False)]
+            if not flight_passengers.empty:
+                st.markdown("**Passenger Details:**")
+
+                # Display available columns (excluding arrival_info since it's already shown)
+                display_columns = [col for col in flight_passengers.columns if col != 'arrival_info']
+
+                if display_columns:
+                    st.dataframe(
+                        flight_passengers[display_columns],
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                else:
+                    st.dataframe(
+                        flight_passengers,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+# Display results
 if not filtered_flights:
-    st.warning("No users found matching your search.")
+    if search_query:
+        st.warning("No flights found matching your search criteria.")
+    else:
+        st.warning("No flights found with passengers from your Excel file.")
 else:
-    # for iata_code, user_data in filtered_users.items():
-        # flight = next((f for f in flight_data['data'] if f['flight']['iata'] == iata_code), None)
+    st.markdown(f"**Found {len(filtered_flights)} flight{'s' if len(filtered_flights) > 1 else ''}**")
+
     for flight in filtered_flights:
-        display_flight_card(flight, flight['flight']['iata'])
+        display_flight_card(flight, passenger_df)
