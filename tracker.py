@@ -688,7 +688,7 @@ def display_flight_card(flight, passenger_df):
 # --- MAIN APP ---
 
 # Load passenger data
-passenger_df = load_excel_data()
+passenger_df = load_excel_from_env()
 
 # Create set of flight numbers (as requested)
 flight_numbers_set = get_flight_numbers_set(passenger_df)
