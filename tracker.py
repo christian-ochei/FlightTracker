@@ -441,7 +441,7 @@ check_for_status_changes()
 #         st.write("No new notifications.")
 
 # --- MAIN PAGE CONTENT ---
-st.title("Live Flight Tracker 🚀")
+st.title("First Love Church - Live Flight Tracker")
 search_query = st.text_input("Search for a user by name:", placeholder="Search by airport, delayed flights, names and so on")
 
 # --- RENDER FLIGHT CARDS ---
