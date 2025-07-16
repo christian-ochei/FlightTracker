@@ -1,3 +1,7 @@
+
+# airlines = get_flights_by_airport(flight_numbers)
+
+
 import os
 
 import streamlit as st
@@ -175,16 +179,9 @@ def get_passengers_for_flight(flight_number, flight_date, passenger_df):
     if passenger_df.empty:
         return []
 
-    # Filter by flight number
-    print(passenger_df, 'passenger_dfpassenger_df')
-    mask = flight_number in passenger_df['arrival_info']
-
-    # Also filter by date if available
-    if 'departure_date' in passenger_df.columns:
-        flight_date_obj = datetime.fromisoformat(flight_date).date()
-        mask = mask & (passenger_df['departure_date'].dt.date == flight_date_obj)
-
-    return passenger_df[mask].to_dict('records')
+    mask = passenger_df['arrival_info'].str.contains(flight_number, na=False)
+    filtered = passenger_df[mask]
+    return filtered.to_dict('records')
 
 
 def create_maps_link(airport_name, terminal, gate):
@@ -595,6 +592,7 @@ def display_flight_card(flight, passenger_df):
 # --- MAIN APP ---
 
 # Load passenger data
+# passenger_df = load_excel_data()
 passenger_df = load_excel_from_env()
 
 # Create set of flight numbers (as requested)
@@ -623,6 +621,8 @@ for flight in flight_data['data']:
     )
     if passengers:  # Only include flights with passengers from our Excel
         relevant_flights.append(flight)
+
+print(relevant_flights, 'relevant_flights')
 
 # Apply search filter
 filtered_flights = search_flights(search_query, relevant_flights, passenger_df)
