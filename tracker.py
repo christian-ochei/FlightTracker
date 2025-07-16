@@ -1,34 +1,4 @@
-# import json
-#
-# import requests
-#
-# base_url = 'http://api.aviationstack.com/v1/'
-# API_KEY = 'ba35f0164e5da11b55ed198749f4e719'  # Replace with your actual API key
-#
-# all_flight_data = []
-#
-# flight_data = {
-#     'ET921': {'name': 'John Doe'}
-# }
-# flight_numbers = [a for a in flight_data.keys()]  # Example flight numbers
-# import requests
-#
-# params = {
-#     "access_key": API_KEY,
-#     "flight_iata": ",".join(flight_numbers),
-#     "limit": 100
-# }
-#
-# response = requests.get("http://api.aviationstack.com/v1/flights", params=params)
-# if response.status_code == 200:
-#     print(json.dumps(response.json(), indent=4))
-#     # flights = response.json().get("data", [])
-#     # for f in flights:
-#     #     print(f"{f['flight']['iata']} — {f['departure']['airport']} → {f['arrival']['airport']} status: {f['flight_status']}")
-# else:
-#     print("Error:", response.status_code, response.text)
-#
-# exit()
+
 
 import streamlit as st
 from datetime import datetime, timedelta
