@@ -31,100 +31,7 @@ flight_data = {
         "count": 2,
         "total": 2
     },
-    "data": [
-        {
-            "flight_date": "2025-07-11",
-            "flight_status": "active",
-            "departure": {
-                "airport": "Bole International",
-                "timezone": "Africa/Addis_Ababa",
-                "iata": "ADD",
-                "icao": "HAAB",
-                "terminal": "2",
-                "gate": "A10",
-                "delay": 42,
-                "scheduled": "2025-07-11T08:40:00+00:00",
-                "estimated": "2025-07-11T08:40:00+00:00",
-                "actual": "2025-07-11T09:22:00+00:00",
-                "estimated_runway": "2025-07-11T09:22:00+00:00",
-                "actual_runway": "2025-07-11T09:22:00+00:00"
-            },
-            "arrival": {
-                "airport": "Kotoka",
-                "timezone": "Africa/Accra",
-                "iata": "ACC",
-                "icao": "DGAA",
-                "terminal": "3",
-                "gate": "B15",
-                "baggage": null,
-                "scheduled": "2025-07-11T11:20:00+00:00",
-                "delay": null,
-                "estimated": "2025-07-11T11:09:00+00:00",
-                "actual": null,
-                "estimated_runway": null,
-                "actual_runway": null
-            },
-            "airline": {
-                "name": "Ethiopian Airlines",
-                "iata": "ET",
-                "icao": "ETH"
-            },
-            "flight": {
-                "number": "921",
-                "iata": "ET921",
-                "icao": "ETH921",
-                "codeshared": null
-            },
-            "aircraft": null,
-            "live": null
-        },
-        {
-            "flight_date": "2025-07-10",
-            "flight_status": "landed",
-            "departure": {
-                "airport": "Bole International",
-                "timezone": "Africa/Addis_Ababa",
-                "iata": "ADD",
-                "icao": "HAAB",
-                "terminal": "2",
-                "gate": "A10",
-                "delay": 27,
-                "scheduled": "2025-07-10T08:40:00+00:00",
-                "estimated": "2025-07-10T08:40:00+00:00",
-                "actual": "2025-07-10T09:06:00+00:00",
-                "estimated_runway": "2025-07-10T09:06:00+00:00",
-                "actual_runway": "2025-07-10T09:06:00+00:00"
-            },
-            "arrival": {
-                "airport": "Kotoka",
-                "timezone": "Africa/Accra",
-                "iata": "ACC",
-                "icao": "DGAA",
-                "terminal": "3",
-                "gate": "B15",
-                "baggage": null,
-                "scheduled": "2025-07-10T11:20:00+00:00",
-                "delay": null,
-                "estimated": "2025-07-10T10:54:00+00:00",
-                "actual": "2025-07-10T10:55:00+00:00",
-                "estimated_runway": "2025-07-10T10:55:00+00:00",
-                "actual_runway": "2025-07-10T10:55:00+00:00"
-            },
-            "airline": {
-                "name": "Ethiopian Airlines",
-                "iata": "ET",
-                "icao": "ETH"
-            },
-            "flight": {
-                "number": "921",
-                "iata": "ET921",
-                "icao": "ETH921",
-                "codeshared": null
-            },
-            "aircraft": null,
-            "live": null
-        }
-    ]
+    "data": [{'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}]
 }
 
 
@@ -714,8 +621,8 @@ for flight in flight_data['data']:
         flight['flight_date'],
         passenger_df
     )
-    # if passengers:  # Only include flights with passengers from our Excel
-    relevant_flights.append(flight)
+    if passengers:  # Only include flights with passengers from our Excel
+        relevant_flights.append(flight)
 
 # Apply search filter
 filtered_flights = search_flights(search_query, relevant_flights, passenger_df)
