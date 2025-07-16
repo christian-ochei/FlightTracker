@@ -164,13 +164,8 @@ def load_excel_data():
         df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
     return df
 
-
-import pyperclip
-import subprocess
-import sys
-
-
 def copy_to_clipboard(text):
+
     """
     Copy string to clipboard using pyperclip (cross-platform).
 
@@ -181,6 +176,9 @@ def copy_to_clipboard(text):
         bool: True if successful, False otherwise
     """
     try:
+        import pyperclip
+        import subprocess
+        import sys
         pyperclip.copy(text)
         print(f"Copied {len(text)} characters to clipboard")
         return True
