@@ -672,7 +672,7 @@ if not passenger_df.empty:
                 flight_data.append({
                     'Flight Number': flight,
                     'Passengers': count,
-                    'Status': 'Multiple' if count > 1 else 'Single'
+                    # 'Status': 'Multiple' if count > 1 else 'Single'
                 })
 
             flight_df = pd.DataFrame(flight_data)
