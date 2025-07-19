@@ -136,8 +136,8 @@ def load_excel_from_env():
         df = pd.DataFrame(data)
 
         # If departure_date exists, convert it back to datetime
-        if 'departure_date' in df.columns:
-            df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+        # if 'departure_date' in df.columns:
+        #     df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
 
         print(f"Successfully loaded DataFrame with shape: {df.shape}")
         print(f"Columns: {list(df.columns)}")
