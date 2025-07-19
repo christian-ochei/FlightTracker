@@ -199,7 +199,7 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
     flight_list = []
 
     for _, row in passenger_df.iterrows():
-        arrival_flights = [f.strip() for f in row['arrival_info'].replace(' ', '').split(',')]
+        arrival_flights = [f.replace(" ", "") for f in row['arrival_info'].replace(' ', '').split(',')]
         person = {
             'type': 'person', 'full_name': row['full_name'], 'campus': row.get('campus', ''),
             'arrival_datetime_utc': row['arrival_datetime'].tz_localize('UTC'),
@@ -463,7 +463,7 @@ def display_person_card(person: Dict, local_tz, flights):
     # 2. Combine the flight cards into a grid container
     flights_grid = f"""
     <div style="margin-top: 1.5em;">
-        <strong style="color: #ddd; display: block; margin-bottom: 10px;">Flight Itinerary ({len(flights)} {'leg' if len(flights) == 1 else 'legs'})</strong>
+        <strong style="color: #ddd; display: block; margin-bottom: 10px;">Flight Itinerary ({len(flights)} {'flight' if len(flights) == 1 else 'flights'})</strong>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
             {''.join(flight_cards_html)}
         </div>
