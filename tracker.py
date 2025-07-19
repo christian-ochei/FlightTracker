@@ -569,7 +569,11 @@ def display_statistics(people: List[Dict], flights: List[Dict]):
 
 
 def display_person_card(person: Dict, local_tz, flights):
-    arrival_dt_local = person['arrival_datetime_utc'].astimezone(local_tz)
+    # Check if the datetime is not NaT before converting timezone
+    if pd.notna(person['arrival_datetime_utc']):
+        arrival_dt_local = person['arrival_datetime_utc'].astimezone(local_tz)
+    else:
+        arrival_dt_local = None  # or handle missing data as appropriate
     status = "Landed" if person['arrival_datetime_utc'] < datetime.now(timezone.utc) else "En Route"
     status_color = get_dynamic_status_color(person['arrival_datetime_utc'], status)
 
