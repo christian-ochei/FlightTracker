@@ -210,28 +210,21 @@ def load_excel_from_env():
     """
     # Get the JSON string from environment variable
     json_string = os.getenv('EXCEL_SHEET')
-    if not json_string:
-        raise ValueError("EXCEL_SHEET environment variable is not set or is empty")
-    try:
-        # Parse JSON string to Python objects
-        data = json.loads(json_string)
+    # Parse JSON string to Python objects
+    data = json.loads(json_string)
 
-        # Convert to DataFrame
-        df = pd.DataFrame(data)
+    # Convert to DataFrame
+    df = pd.DataFrame(data)
 
-        # If departure_date exists, convert it back to datetime
-        # if 'departure_date' in df.columns:
-        #     df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+    # If departure_date exists, convert it back to datetime
+    # if 'departure_date' in df.columns:
+    #     df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
 
-        print(f"Successfully loaded DataFrame with shape: {df.shape}")
-        print(f"Columns: {list(df.columns)}")
-        df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
-        df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
-        return df
-
-    except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(f"Invalid JSON in EXCEL_SHEET environment variable: {e}")
-
+    print(f"Successfully loaded DataFrame with shape: {df.shape}")
+    print(f"Columns: {list(df.columns)}")
+    df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
+    df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
+    return df
 
 def json_string_to_dataframe(json_string):
     """
