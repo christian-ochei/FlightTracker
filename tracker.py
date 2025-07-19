@@ -450,7 +450,7 @@ def display_person_card(person: Dict, local_tz, flights):
                 <span style="float: right; font-weight: bold; color: {flight_status_color}; font-size: 0.9em;">{flight_status.upper()}</span>
             </div>
             <div style="font-size: 1em; color: #ccc; margin-bottom: 10px;">
-                {details['departure']['iata']} → <strong>{details['arrival']['iata']}</strong>
+                {details['departure']['airport']} → <strong>{details['arrival']['airport']}</strong>
             </div>
             <div style="font-size: 0.85em; color: #aaa;">
                 Arrives: {arr_dt_local.strftime('%b %d, %I:%M %p')}
