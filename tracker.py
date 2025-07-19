@@ -305,7 +305,7 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
     flight_list = []
 
     # Group by personid to consolidate multiple flight entries per person
-  print(passenger_df)
+    print(passenger_df, "passenger_df")
     grouped = passenger_df.groupby('personid')
 
     for personid, person_flights in grouped:
