@@ -36,18 +36,21 @@ flight_data = {
         "count": 2,
         "total": 2
     },
-    "data": [{'flight_date': '2025-07-15', 'flight_status': 'active',
-              'departure': {'airport': 'John F Kennedy International', 'timezone': 'America/New_York', 'iata': 'JFK',
-                            'icao': 'KJFK', 'terminal': '8', 'gate': None, 'delay': 26,
-                            'scheduled': '2025-07-15T01:20:00+00:00', 'estimated': '2025-07-15T01:20:00+00:00',
-                            'actual': '2025-07-15T01:45:00+00:00', 'estimated_runway': '2025-07-15T01:45:00+00:00',
-                            'actual_runway': '2025-07-15T01:45:00+00:00'},
-              'arrival': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH',
-                          'terminal': 'HIA', 'gate': None, 'baggage': '7', 'scheduled': '2025-07-15T20:45:00+00:00',
-                          'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None,
-                          'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'},
-              'flight': {'number': '706', 'iata': 'QR706', 'icao': 'QTR706', 'codeshared': None}, 'aircraft': None,
-              'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
+    "data": [
+        # {'flight_date': '2025-07-15', 'flight_status': 'active',
+        #       'departure': {'airport': 'John F Kennedy International', 'timezone': 'America/New_York', 'iata': 'JFK',
+        #                     'icao': 'KJFK', 'terminal': '8', 'gate': None, 'delay': 26,
+        #                     'scheduled': '2025-07-15T01:20:00+00:00', 'estimated': '2025-07-15T01:20:00+00:00',
+        #                     'actual': '2025-07-15T01:45:00+00:00', 'estimated_runway': '2025-07-15T01:45:00+00:00',
+        #                     'actual_runway': '2025-07-15T01:45:00+00:00'},
+        #       'arrival': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH',
+        #                   'terminal': 'HIA', 'gate': None, 'baggage': '7', 'scheduled': '2025-07-15T20:45:00+00:00',
+        #                   'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None,
+        #                   'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'},
+        #       'flight': {'number': '706', 'iata': 'QR706', 'icao': 'QTR706', 'codeshared': None}, 'aircraft': None,
+        #       'live': None},
+        #
+             {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
                               'departure': {'airport': 'Bole International', 'timezone': 'Africa/Addis_Ababa',
                                             'iata': 'ADD', 'icao': 'HAAB', 'terminal': '2', 'gate': 'A10',
                                             'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00',
@@ -94,19 +97,21 @@ flight_data = {
                           'estimated_runway': None, 'actual_runway': None},
               'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET', 'icao': 'ETH'},
               'flight': {'number': '519', 'iata': 'ET519', 'icao': 'ETH519', 'codeshared': None}, 'aircraft': None,
-              'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
-                              'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH',
-                                            'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None,
-                                            'scheduled': '2025-07-16T08:40:00+00:00',
-                                            'estimated': '2025-07-16T08:40:00+00:00', 'actual': None,
-                                            'estimated_runway': None, 'actual_runway': None},
-                              'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC',
-                                          'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None,
-                                          'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None,
-                                          'actual': None, 'estimated_runway': None, 'actual_runway': None},
-                              'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'},
-                              'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None},
-                              'aircraft': None, 'live': None}]
+              'live': None},
+        # {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
+        #                       'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH',
+        #                                     'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None,
+        #                                     'scheduled': '2025-07-16T08:40:00+00:00',
+        #                                     'estimated': '2025-07-16T08:40:00+00:00', 'actual': None,
+        #                                     'estimated_runway': None, 'actual_runway': None},
+        #                       'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC',
+        #                                   'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None,
+        #                                   'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None,
+        #                                   'actual': None, 'estimated_runway': None, 'actual_runway': None},
+        #                       'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'},
+        #                       'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None},
+        #                       'aircraft': None, 'live': None}
+    ]
 }
 
 
@@ -118,10 +123,16 @@ def load_excel_data():
 
     # Clean column names (remove extra spaces, standardize)
     df.columns = df.columns.str.strip().str.replace(' ', '_').str.lower()
+    # Remove rows where critical columns are all null
+    df = df.dropna(subset=['personid', 'full_name'], how='all')
+    df = df.dropna(subset=['full_name'], how='all')
+    # Or remove rows where personid is null
+    df = df[df['personid'].notna()]
+
 
     # Expected columns (adjust based on your actual Excel structure)
     # ['name', 'flight_number', 'departure_date', 'seat', 'class', 'phone', 'email']
-    print(df)
+    # print(df)
 
 
     # If the actual columns are different, map them here
@@ -133,21 +144,22 @@ def load_excel_data():
         'seat_number': 'seat',
         'travel_class': 'class',
         'phone_number': 'phone',
-        'email_address': 'email'
+        'email_address': 'email',
     }
 
     # Apply column mapping if needed
     df = df.rename(columns=column_mapping)
 
     # Ensure flight_number is string and clean it
-    if 'flight_number' in df.columns:
-        df['flight_number'] = df['flight_number'].astype(str).str.strip().str.upper()
+    # if 'flight_number' in df.columns:
+    #     df['flight_number'] = df['flight_number'].astype(str).str.strip().str.upper()
 
     # Parse dates if they exist
     # if 'departure_date' in df.columns:
     #     df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
     # df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
     # df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
+    print(len(df), 'dfdfdf')
     return df
 
 
@@ -186,6 +198,7 @@ def excel_to_json_string():
 
 # excel_to_json_string()
 # exit()
+
 def load_excel_from_env():
     """
     Load Excel data from EXCEL_SHEET environment variable.
@@ -272,8 +285,8 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
     flight_list = []
 
     # Group by personid to consolidate multiple flight entries per person
-    print(passenger_df,'passenger_dfpassenger_df')
     grouped = passenger_df.groupby('personid')
+    print(len(grouped), 'grouped')
 
     for personid, person_flights in grouped:
         # Sort by priority to maintain flight order
