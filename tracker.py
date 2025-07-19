@@ -168,26 +168,339 @@ def json_string_to_dataframe(json_string):
 
     return df
 
-def get_flight_numbers_set(passenger_df):
-    """Create a set of unique flight numbers from the passenger data."""
-    if 'flight_number' in passenger_df.columns:
-        return set(passenger_df['flight_number'].dropna().unique())
-    return set()
+import os
+import streamlit as st
+import pandas as pd
+import json
+from datetime import datetime, timezone, timedelta
+import pytz
+import re
+from dateutil.parser import parse as date_parse
+from typing import Dict, List, Any, Tuple
+
+# --- PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="FLC Live Flight & Passenger Tracker",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+STOP_WORDS = {'in', 'the', 'going', 'to', 'from', 'of', 'at', 'a', 'on', 'for', 'with'}
+IATA_COUNTRY_MAP = {'ACC': 'Ghana', 'JFK': 'USA', 'DOH': 'Qatar', 'LHR': 'UK', 'ADD': 'Ethiopia', 'CDG': 'France',
+                    'IAD': 'USA', 'LOS': 'Nigeria', 'CMN': 'Morocco'}
 
 
-def get_passengers_for_flight(flight_number, flight_date, passenger_df):
-    """Get all passengers for a specific flight and date."""
-    if passenger_df.empty:
-        return []
+def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -> Tuple[List[Dict], List[Dict]]:
+    people_list = []
+    flight_api_data = flight_api_data['data']
+    flight_list = []
 
-    mask = passenger_df['arrival_info'].str.replace(' ', '').str.contains(flight_number, na=False)
-    filtered = passenger_df[mask]
-    return filtered.to_dict('records')
+    for _, row in passenger_df.iterrows():
+        arrival_flights = [f.strip() for f in row['arrival_info'].replace(' ', '').split(',')]
+        person = {
+            'type': 'person', 'full_name': row['full_name'], 'campus': row['campus'],
+            'arrival_datetime_utc': row['arrival_datetime'].tz_localize('UTC'),
+            'departure_datetime_utc': row['departure_datetime'].tz_localize('UTC'),
+            'arrival_flights': arrival_flights,
+            'departure_flights': [f.strip() for f in row['departure_info'].replace(' ', '').split(',')],
+            'search_text': f"{row['full_name']} {row['campus']} {' '.join(arrival_flights)}".lower(), 'match_tip': ''
+        }
+        people_list.append(person)
 
+    for flight_details in flight_api_data:
+        flight_iata = flight_details['flight']['iata']
+        passengers_on_flight = [p for p in people_list if flight_iata in p['arrival_flights']]
+        search_text = f"{flight_details['airline']['name']} {flight_details['flight']['iata']} {flight_details['departure']['airport']} {flight_details['arrival']['airport']} {flight_details['arrival']['iata']} {flight_details['flight_status']}  {flight_details['flight']['iata']} {' '.join([p['full_name'] for p in passengers_on_flight])}".lower()
+        flight = {
+            'type': 'flight', 'details': flight_details, 'passengers': passengers_on_flight,
+            'arrival_datetime_utc': datetime.fromisoformat(flight_details['arrival']['scheduled']).replace(
+                tzinfo=timezone.utc),
+            'search_text': search_text, 'match_tip': ''
+        }
+        flight_list.append(flight)
+
+    return people_list, flight_list
+
+
+import re
+from typing import Dict, List, Any, Tuple
+from dateutil.parser import parse as date_parse
+
+# Define stop words and date indicators outside the function for efficiency
+STOP_WORDS = {'in', 'the', 'going', 'to', 'from', 'of', 'at', 'a', 'on', 'for', 'with'}
+DATE_INDICATORS = {
+    'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+    'january', 'february', 'march', 'april', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'
+}
+
+
+def parse_query(query: str) -> Tuple[List[str], Dict[str, Any]]:
+    """
+    Parses a search query to separate search terms from special keywords.
+    This version uses a more robust method to detect dates, preventing
+    flight numbers and other codes from being misinterpreted.
+    """
+    query_lower = query.lower()
+    tokens = [word for word in re.split(r'\s+', query_lower) if word and word not in STOP_WORDS]
+
+    # --- 1. Extract standard keywords ---
+    keywords = {
+        'person': 'person' in tokens or 'people' in tokens,
+        'flight': 'flight' in tokens or 'plane' in tokens,
+        'landed': 'landed' in tokens,
+        'landing': 'landing' in tokens,
+        'delayed': 'delayed' in tokens,
+        'on_time': 'on time' in query_lower,
+        'today': 'today' in tokens,
+        'yesterday': 'yesterday' in tokens
+    }
+
+    # --- 2. Separate potential search terms from keywords ---
+    potential_search_terms = [t for t in tokens if t not in keywords]
+
+    # --- 3. Intelligently find and parse date parts ---
+    date_parts = []
+    # Keep track of terms that are definitely not part of a date
+    final_search_terms = []
+
+    for term in potential_search_terms:
+        # A term is likely a date part if it's a known date word or a number (e.g., "4", "24th")
+        cleaned_term = re.sub(r'(st|nd|rd|th)$', '', term)
+        if term in DATE_INDICATORS or cleaned_term.isdigit():
+            date_parts.append(term)
+        else:
+            final_search_terms.append(term)
+
+    # If we found any date-related words, try to parse them
+    if date_parts:
+        try:
+            # Parse only the collected date parts for higher accuracy
+            parsed_date = date_parse(' '.join(date_parts))
+            keywords['date'] = parsed_date.date()
+        except (ValueError, TypeError):
+            # If parsing fails, it wasn't a valid date. Add the parts back to the search terms.
+            final_search_terms.extend(date_parts)
+
+    # Return the search terms that were NOT identified as part of a date
+    return final_search_terms, keywords
+
+
+def search_and_filter(query: str, all_people: List[Dict], all_flights: List[Dict]):
+    if not query.strip(): return sorted(all_flights, key=lambda x: abs(
+        (x['arrival_datetime_utc'] - datetime.now(timezone.utc)).total_seconds()))
+    terms, keywords = parse_query(query)
+    show_people, show_flights = keywords['person'] or not keywords['flight'], keywords['flight'] or not keywords[
+        'person']
+    potential_results = []
+    if show_people: potential_results.extend(all_people)
+    if show_flights: potential_results.extend(all_flights)
+    results = []
+    now = datetime.now(timezone.utc)
+    for item in potential_results:
+        item['match_tip'] = ''
+        is_match = True
+        status = item['details']['flight_status'] if item['type'] == 'flight' else 'N/A'
+        if keywords['landed'] and status != 'landed': is_match = False
+        if keywords['landing'] and status != 'active': is_match = False
+        if keywords['delayed'] and (
+                item.get('details', {}).get('departure', {}).get('delay') or 0) == 0: is_match = False
+        if keywords['on_time'] and (
+                item.get('details', {}).get('departure', {}).get('delay') or 0) > 0: is_match = False
+        item_date = item['arrival_datetime_utc'].date()
+        if keywords.get('date') and item_date != keywords['date']: is_match = False
+        if keywords['today'] and item_date != now.date(): is_match = False
+        if keywords['yesterday'] and item_date != (now.date() - timedelta(days=1)): is_match = False
+        if terms:
+            text_to_search = item['search_text']
+            if item['type'] == 'flight':
+                dest_iata = item['details']['arrival']['iata']
+                text_to_search += f" {IATA_COUNTRY_MAP.get(dest_iata, '').lower()}"
+            elif item['type'] == 'person':
+                final_flight_iata = item['arrival_flights'][-1]
+                final_flight = next((f for f in all_flights if f['details']['flight']['iata'] in final_flight_iata),
+                                    None)
+                if final_flight: text_to_search += f" {IATA_COUNTRY_MAP.get(final_flight['details']['arrival']['iata'], '').lower()}"
+            if not all(term in text_to_search for term in terms):
+                is_match = False
+
+        if is_match:
+            if terms:
+                if item['type'] == 'flight':
+                    for p in item['passengers']:
+                        if any(term in p['full_name'].lower() for term in terms):
+                            item['match_tip'] = f"✓ {p['full_name']} found"
+                            break
+                elif item['type'] == 'person':
+                    if any(term.upper() in item['arrival_flights'] for term in terms):
+                        item['match_tip'] = f"✓ Flight(s) found"
+            results.append(item)
+    return sorted(results, key=lambda x: abs((x['arrival_datetime_utc'] - now).total_seconds()))
+
+
+# --- UI DISPLAY COMPONENTS ---
+
+def get_time_ago_string(dt_utc: datetime) -> str:
+    now = datetime.now(timezone.utc)
+    delta = now - dt_utc
+    seconds = abs(delta.total_seconds())
+    tense = "ago" if delta.total_seconds() > 0 else "from now"
+    days, rem = divmod(seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, _ = divmod(rem, 60)
+    if days > 0: return f"{int(days)} {'day' if int(days) == 1 else 'days'} {tense}"
+    if hours > 0: return f"{int(hours)} {'hour' if int(hours) == 1 else 'hours'} {tense}"
+    if minutes > 0: return f"{int(minutes)} {'minute' if int(minutes) == 1 else 'minutes'} {tense}"
+    return "just now"
+
+
+def get_dynamic_status_color(arrival_utc: datetime, status: str) -> str:
+    """Returns a color based on time to landing."""
+    now = datetime.now(timezone.utc)
+    delta_seconds = (arrival_utc - now).total_seconds()
+
+    # Within 2 hours (before or after) -> Critical window
+    if abs(delta_seconds) <= 7200:
+        return "#ff4b4b"  # Red
+    # Landed more than 2 hours ago -> Safe
+    if status == 'landed':
+        return "#00c3ff"  # Blue
+    # Arriving between 2 and 24 hours from now -> Approaching
+    if 7200 < delta_seconds <= 86400:
+        return "#ffad5a"  # Orange
+    # More than 24 hours away -> Scheduled
+    return "#808080"  # Gray
+
+
+def display_statistics(people: List[Dict], flights: List[Dict]):
+    st.image("FirstLove.png", width=60)
+    st.title("First Love - Flight Tracker")
+    st.html(
+        """
+        <style>
+        [data-testid="stMetricValue"] > div {
+            font-size: 2rem; /* Adjust the font size as needed */
+            font-weight: 600
+        }
+        
+        small {
+            font-size: 18px;
+        }
+        </style>
+        """,
+    )
+    with st.expander("Show/Hide Flight & Passenger Summary", expanded=False):
+        cols = st.columns(4)
+        sorted_flights = sorted(flights, key=lambda x: x['details']['flight']['iata'])
+        for i, flight in enumerate(sorted_flights):
+            num_pax = len(flight['passengers'])
+            dep = flight['details']['departure']['iata']
+            arr = flight['details']['arrival']['iata']
+            # cols[i % 4].metric(
+            #     value=f"✈ {flight['details']['flight']['iata']} ({dep} → {arr})",
+            #     label=f"{num_pax} {'Passenger' if num_pax == 1 else 'Passengers'}"
+            # )
+            cols[i % 4].html(
+                f"""
+                <div style="padding: 10px; border: 1px solid #e0e0e011; border-radius: 5px;">
+                    <div style="font-size: 13.3px; color: #666; margin-bottom: 5px;">
+                        {num_pax} {'Passenger' if num_pax == 1 else 'Passengers'}
+                    </div>
+                    <div style="font-size: 15.4px; font-weight: bold;">
+                        ✈ {flight['details']['flight']['iata']} ({dep} → {arr})
+                    </div>
+                </div>
+                """
+            )
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Total Passengers", f"{len(people)}")
+    c2.metric("Passengers Landed",
+              f"{sum(len(f['passengers']) for f in flights if f['details']['flight_status'] == 'landed')}")
+    c3.metric("Total Flights", f"{len(flights)}")
+    c4.metric("Flights Landed", f"{sum(1 for f in flights if f['details']['flight_status'] == 'landed')}")
+    c5.metric("Flights Delayed", f"{sum(1 for f in flights if f['details']['departure'].get('delay', 0) and f['details']['departure'].get('delay', 0) > 0)}")
+
+
+def display_person_card(person: Dict, local_tz, flights):
+    arrival_dt_local = person['arrival_datetime_utc'].astimezone(local_tz)
+    status = "Landed" if person['arrival_datetime_utc'] < datetime.now(timezone.utc) else "En Route"
+    status_color = get_dynamic_status_color(person['arrival_datetime_utc'], status)
+
+    # 1. Build the HTML for each clickable flight card in the grid
+    flight_cards_html = []
+    for flight in flights:
+        details = flight['details']
+        flight_status = details['flight_status']
+        flight_status_color = get_dynamic_status_color(flight['arrival_datetime_utc'], flight_status)
+        arr_dt_local = datetime.fromisoformat(details['arrival']['scheduled']).astimezone(local_tz)
+
+        # The destination IATA code to be used in the search query
+        destination_iata = details['flight']['iata']
+        encoded_iata = urllib.parse.quote(destination_iata)
+
+        # The entire card is now a clickable link (<a> tag) with the class "itinerary-card"
+        flight_card = f"""
+        <a href="?search={encoded_iata}" target="_self" class="itinerary-card" style="border-left-color: {flight_status_color};">
+            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 5px;">
+                ✈ {details['flight']['iata']}
+                <span style="float: right; font-weight: bold; color: {flight_status_color}; font-size: 0.9em;">{flight_status.upper()}</span>
+            </div>
+            <div style="font-size: 1em; color: #ccc; margin-bottom: 10px;">
+                {details['departure']['iata']} → <strong>{details['arrival']['iata']}</strong>
+            </div>
+            <div style="font-size: 0.85em; color: #aaa;">
+                Arrives: {arr_dt_local.strftime('%b %d, %I:%M %p')}
+                {f" | <span style='color: #ffad5a;'>Delayed</span>" if details['departure'].get('delay') else ""}
+            </div>
+        </a>
+        """
+        flight_cards_html.append(flight_card)
+
+    # 2. Combine the flight cards into a grid container
+    flights_grid = f"""
+    <div style="margin-top: 1.5em;">
+        <strong style="color: #ddd; display: block; margin-bottom: 10px;">Flight Itinerary ({len(flights)} {'leg' if len(flights) == 1 else 'legs'})</strong>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            {''.join(flight_cards_html)}
+        </div>
+    </div>
+    """
+
+    st.html(f"""
+    <style>
+        .itinerary-card {{
+            display: block;
+            border: 1px solid #333;
+            border-left-width: 5px;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #262626;
+            text-decoration: none;
+            color: inherit;
+            transition: background-color 0.2s ease;
+        }}
+        .itinerary-card:hover {{
+            background-color: #3a3a3a; /* Softly lighter background on hover */
+            text-decoration: none;
+            color: white;
+        }}
+    </style>
+    <div style="border: 1px solid #333; border-left: 10px solid {status_color}; border-radius: 10px; padding: 20px; margin-bottom: 20px; background-color: #1a1a1a;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">👤 {person['full_name']}</h3>
+            {f'<span style="background-color: #4CAF50; color: white; padding: 3px 8px; border-radius: 5px; font-size: 0.8em;">{person["match_tip"]}</span>' if person["match_tip"] else ''}
+        </div>
+        <p style="color: #aaa; margin: 0 0 1em 0;">{person['campus']}</p>
+        <hr style="border-color: #333; margin-top: 0; margin-bottom: 1em;">
+
+        {flights_grid}
+    </div>
+    """)
 
 def create_maps_link(airport_name, terminal, gate):
     """Create a Google Maps link for the airport gate."""
-    if gate and gate != 'N/A':
+    if gate and gate.lower().strip() != 'n/a':
         query = f"{airport_name} airport terminal {terminal} gate {gate}"
     else:
         query = f"{airport_name} airport terminal {terminal}"
@@ -198,538 +511,133 @@ def create_maps_link(airport_name, terminal, gate):
     return f"https://www.google.com/maps/search/?api=1&query={encoded_query}"
 
 
-def search_flights(query, flights, passenger_df):
-    """Enhanced search function that searches through multiple fields."""
-    if not query:
-        return flights
+def display_flight_card(flight: Dict, local_tz):
+    details = flight['details']
+    status = details['flight_status']
+    status_color = get_dynamic_status_color(flight['arrival_datetime_utc'], status)
+    dep_dt_local = datetime.fromisoformat(details['departure']['scheduled']).astimezone(local_tz)
+    arr_dt_local = datetime.fromisoformat(details['arrival']['scheduled']).astimezone(local_tz)
 
-    query = query.lower().strip()
-    filtered_flights = []
-
-    for flight in flights:
-        # Search in flight data
-        flight_text = " ".join([
-            flight['flight']['iata'],
-            flight['flight']['number'],
-            flight['airline']['name'],
-            flight['departure']['airport'],
-            flight['arrival']['airport'],
-            flight['departure']['iata'],
-            flight['arrival']['iata'],
-            flight['flight_status'],
-            flight['flight_date']
-        ]).lower()
-
-        # Search in passenger data for this flight
-        passengers = get_passengers_for_flight(
-            flight['flight']['iata'],
-            flight['flight_date'],
-            passenger_df
-        )
-
-        passenger_text = ""
-        if passengers:
-            passenger_text = " ".join([
-                                          str(p.get('name', '')) + ' ' +
-                                          str(p.get('seat', '')) + ' ' +
-                                          str(p.get('class', '')) + ' ' +
-                                          str(p.get('phone', '')) + ' ' +
-                                          str(p.get('email', '')) + ' '                                    for p in passengers
-            ]).lower()
-
-        # Date-based search
-        try:
-            flight_date = datetime.fromisoformat(flight['flight_date'])
-            date_text = " ".join([
-                flight_date.strftime('%B'),  # Month name
-                flight_date.strftime('%b'),  # Short month
-                flight_date.strftime('%A'),  # Day of week
-                flight_date.strftime('%a'),  # Short day
-                str(flight_date.day),
-                str(flight_date.year)
-            ]).lower()
-        except:
-            date_text = ""
-
-        # Combine all searchable text
-        searchable_text = f"{flight_text} {passenger_text} {date_text}"
-
-        # Check if query matches any part of the searchable text
-        if query in searchable_text:
-            filtered_flights.append(flight)
-
-    return filtered_flights
-
-
-def get_flight_progress(flight):
-    """Calculate flight progress percentage."""
-    status = flight['flight_status']
-    if status == 'landed':
-        return 100
-    if status != 'active' or not flight['departure']['actual'] or not flight['arrival']['scheduled']:
-        return 0
-
-    now_utc = datetime.now(pytz.utc)
-    start_time = datetime.fromisoformat(flight['departure']['actual'])
-    end_time = datetime.fromisoformat(flight['arrival']['scheduled'])
-
-    total_duration = (end_time - start_time).total_seconds()
-    elapsed_duration = (now_utc - start_time).total_seconds()
-
-    if total_duration <= 0:
-        return 0
-    progress = (elapsed_duration / total_duration) * 100
-    return min(max(progress, 0), 100)
-
-
-def get_precise_landing_status(flight):
-    """Calculate the precise landing status string using local time zone."""
-    status = flight['flight_status']
-    local_tz = datetime.now().astimezone().tzinfo
-    now_local = datetime.now(local_tz)
-
-    if status == 'landed' and flight['arrival']['actual']:
-        landed_time_utc = datetime.fromisoformat(flight['arrival']['actual'])
-        if landed_time_utc.tzinfo is None:
-            landed_time_utc = landed_time_utc.replace(tzinfo=timezone.utc)
-
-        landed_time_local = landed_time_utc.astimezone(local_tz)
-        time_since_landing = now_local - landed_time_local
-
-        if time_since_landing.total_seconds() < 0:
-            return "Landing time inconsistent"
-
-        # Fix: Use total_seconds() and properly calculate days, hours, minutes
-        total_seconds = int(time_since_landing.total_seconds())
-        days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
-        hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
-        minutes, _ = divmod(remainder, 60)  # 60 seconds in a minute
-
-        parts = []
-        if days > 0:
-            parts.append(f"{days} day{'s' if days > 1 else ''}")
-        if hours > 0:
-            parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
-        if minutes > 0:
-            parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
-
-        if not parts:
-            return "**Landed:** just now"
-
-        return f"**Landed:** {', '.join(parts)} ago"
-
-    elif flight['arrival']['scheduled']:
-        scheduled_time_utc = datetime.fromisoformat(flight['arrival']['scheduled'])
-        if scheduled_time_utc.tzinfo is None:
-            scheduled_time_utc = scheduled_time_utc.replace(tzinfo=timezone.utc)
-
-        scheduled_time_local = scheduled_time_utc.astimezone(local_tz)
-        time_until_landing = scheduled_time_local - now_local
-
-        if time_until_landing.total_seconds() < 0:
-            time_overdue = now_local - scheduled_time_local
-
-            # Fix: Use total_seconds() and properly calculate days, hours, minutes
-            total_seconds = int(time_overdue.total_seconds())
-            days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
-            hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
-            minutes, _ = divmod(remainder, 60)  # 60 seconds in a minute
-
-            parts = []
-            if days > 0:
-                parts.append(f"{days} day{'s' if days > 1 else ''}")
-            if hours > 0:
-                parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
-            if minutes > 0:
-                parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
-
-            overdue_text = ', '.join(parts) if parts else "just now"
-            return f"**Overdue:** {overdue_text} past scheduled landing"
-
-        # Fix: Use total_seconds() and properly calculate days, hours, minutes
-        total_seconds = int(time_until_landing.total_seconds())
-        days, remainder = divmod(total_seconds, 86400)  # 86400 seconds in a day
-        hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
-        minutes, _ = divmod(remainder, 60)  # 60 seconds in a minute
-
-        parts = []
-        if days > 0:
-            parts.append(f"{days} day{'s' if days > 1 else ''}")
-        if hours > 0:
-            parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
-        if minutes > 0:
-            parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
-
-        if not parts:
-            time_text = "landing now"
-        else:
-            time_text = f"landing in {', '.join(parts)}"
-
-        local_time_str = scheduled_time_local.strftime('%I:%M %p')
-        local_date_str = scheduled_time_local.strftime('%b %d, %Y')
-
-        return f"**Expected:** {time_text} at {local_time_str} on {local_date_str}"
-
-    return "Landing time not available"
-
-
-def get_formatted_time_string(dt_str, prefix=""):
-    """Format an ISO datetime string into a full date/time with relative description."""
-    if not dt_str:
-        return "N/A"
-
-    flight_time = datetime.fromisoformat(dt_str)
-    now = datetime.now(pytz.utc)
-    delta = now - flight_time
-
-    absolute_time = flight_time.strftime('%d %b %Y %I:%M %p')
-
-    tense = "ago" if delta.total_seconds() > 0 else "from now"
-    total_seconds = abs(delta.total_seconds())
-
-    # Fix: Properly calculate days, hours, minutes to avoid overflow
-    if total_seconds < 60:
-        value = int(total_seconds)
-        unit = "second"
-    elif total_seconds < 3600:
-        value = int(total_seconds / 60)
-        unit = "minute"
-    elif total_seconds < 86400:
-        value = int(total_seconds / 3600)
-        unit = "hour"
-    else:
-        value = int(total_seconds / 86400)
-        unit = "day"
-
-    relative_time = f"{value} {unit}{'s' if value != 1 else ''} {tense}"
-    return f"{prefix}{absolute_time} ({relative_time})"
-
-def display_flight_card(flight, passenger_df):
-    """Display a flight information card with passenger details."""
-    status = flight['flight_status']
-    passengers = get_passengers_for_flight(
-        flight['flight']['iata'],
-        flight['flight_date'],
-        passenger_df
-    )
-
-    status_color = "gray"
-    glowing_css = ""
-
-    if status == 'active':
-        status_color = "red"
-    elif status == 'landed':
-        status_color = "#00c3ff"
-        glowing_css = """
-            animation: glowing 3s infinite;
-            text-shadow: 0 0 5px #00c3ff, 0 0 10px #00c3ff, 0 0 15px #00c3ff;
+    # --- New: Generate clickable passenger tags ---
+    passenger_tags = []
+    for p in flight['passengers']:
+        encoded_name = urllib.parse.quote(p['full_name'])
+        tag = f"""
+        <a href="?search={encoded_name}" target="_self" class="passenger-tag">
+            {p['full_name']}
+        </a>
         """
-        landed_time = datetime.fromisoformat(flight['arrival']['actual'])
-        if datetime.now(pytz.utc) - landed_time > timedelta(days=1):
-            status_color = "green"
-            glowing_css = ""
+        passenger_tags.append(tag)
 
-    st.markdown(f"""
+    passengers_html = f"""
+    <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px;">
+        {''.join(passenger_tags)}
+    </div>
+    """ if passenger_tags else ""
+
+    st.html(f"""
     <style>
-        @keyframes glowing {{
-            0% {{ box-shadow: 0 0 3px {status_color}; }}
-            50% {{ box-shadow: 0 0 15px {status_color}; }}
-            100% {{ box-shadow: 0 0 3px {status_color}; }}
-        }}
-        .card-container {{
-            border: 1px solid #333;
-            border-left: 10px solid {status_color};
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 25px;
-            background-color: #1a1a1a;
-            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-            transition: all 0.3s ease-in-out;
-            {glowing_css.replace('text-shadow', 'box-shadow')}
-        }}
-        .status-text {{
-            color: {status_color};
-            font-weight: bold;
-            font-size: 1.2em;
-            {glowing_css}
-        }}
-        .passenger-hover {{
-            position: relative;
-            display: inline-block;
-        }}
-        .passenger-hover .passenger-list {{
-            visibility: hidden;
-            width: 300px;
-            background-color: #2a2a2a;
-            color: white;
-            text-align: left;
-            border-radius: 6px;
-            padding: 10px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -150px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            border: 1px solid #444;
-        }}
-        .passenger-hover:hover .passenger-list {{
-            visibility: visible;
-            opacity: 1;
-        }}
-        .maps-button {{
-            background-color: #4CAF50;
-            color: white;
-            padding: 5px 10px;
+        .passenger-tag {{
+            background-color: #333;
+            color: #ddd;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
             text-decoration: none;
-            border-radius: 3px;
-            font-size: 0.8em;
-            margin-left: 10px;
+            transition: background-color 0.2s ease;
         }}
-        .maps-button:hover {{
-            background-color: #45a049;
-            text-decoration: none;
+        .passenger-tag:hover {{
+            background-color: #007bff;
             color: white;
+            text-decoration: none;
         }}
     </style>
-    """, unsafe_allow_html=True)
-
-    with st.container():
-        st.markdown('<div class="card-container">', unsafe_allow_html=True)
-
-        # Header with airline name as main title
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.title(f"{flight['airline']['name']}")
-            st.markdown(f"**Flight:** `{flight['flight']['iata']}` | **Date:** {flight['flight_date']}")
-        with col2:
-            st.markdown(f'<p class="status-text">{status.upper()}</p>', unsafe_allow_html=True)
-
-        # Passenger count and hover menu
-        if passengers:
-            # passenger_names = [p.get('name', 'Unknown') for p in passengers]
-            passenger_details = ""
-            for p in passengers:
-                passenger_details += f"• {p.get('full_name', 'Unknown')} - Seat {p.get('seat', 'N/A')} ({p.get('class', 'N/A')})<br>"
-
-            st.markdown(f"""
-            <div class="passenger-hover">
-                <span style="color: #4CAF50; font-weight: bold; cursor: pointer;">
-                    👥 {len(passengers)} Passenger{'s' if len(passengers) > 1 else ''} (hover for details)
-                </span>
-                <div class="passenger-list">
-                    <strong>Passengers on this flight:</strong><br><br>
-                    {passenger_details}
-                </div>
+    <div style="border: 1px solid #333; border-left: 10px solid {status_color}; border-radius: 10px; padding: 20px; margin-bottom: 20px; background-color: #1a1a1a;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin: 0;">✈ <a style="opacity: 0.9">{details['airline']['name']}</a> <code>{details['flight']['iata']}</code></h3>
+                <span style="font-weight: bold; color: {status_color};">{status.upper()}</span>
             </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("👥 No passengers from your list on this flight")
+            {f'<span style="background-color: #4CAF50; color: white; padding: 3px 8px; border-radius: 5px; font-size: 0.8em;">{flight["match_tip"]}</span>' if flight["match_tip"] else ''}
+        </div>
 
-        st.markdown("---")
-        st.warning(get_precise_landing_status(flight))
+        {passengers_html}
 
-        # Flight route with maps buttons
-        col1, col2, col3 = st.columns([2, 1, 2])
-        with col1:
-            st.markdown(f"**From:** `{flight['departure']['iata']}`")
-            st.write(flight['departure']['airport'])
-            gate_info = f"Gate: {flight['departure']['gate'] or 'N/A'}"
-
-            if flight['departure']['gate'] and flight['departure']['gate'] != 'N/A':
-                maps_url = create_maps_link(
-                    flight['departure']['airport'],
-                    flight['departure']['terminal'],
-                    flight['departure']['gate']
-                )
-                st.markdown(f'{gate_info} <a href="{maps_url}" target="_blank" class="maps-button" style="background-color: #000; color: #fff; font-weight: bold">📍 Open Maps</a>',
-                            unsafe_allow_html=True)
-            else:
-                st.caption(gate_info)
-
-        with col2:
-            st.markdown("✈️", unsafe_allow_html=True)
-
-        with col3:
-            st.markdown(f"**To:** `{flight['arrival']['iata']}`")
-            st.write(flight['arrival']['airport'])
-            gate_info = f"Gate: {flight['arrival']['gate'] or 'N/A'}"
-
-            if flight['arrival']['gate'] and flight['arrival']['gate'] != 'N/A':
-                maps_url = create_maps_link(
-                    flight['arrival']['airport'],
-                    flight['arrival']['terminal'],
-                    flight['arrival']['gate']
-                )
-                st.markdown(f'{gate_info} <a href="{maps_url}" target="_blank" class="maps-button" style="background-color: #000; color: #fff; font-weight: bold; margin-bottom: 9px;">📍 Open Maps</a>',
-                            unsafe_allow_html=True)
-            else:
-                st.caption(gate_info)
-
-        # Progress bar
-        progress = get_flight_progress(flight)
-        st.progress(int(progress))
-        st.markdown(f"**Flight Progress:** {int(progress)}%")
-
-        # Time information
-        takeoff_time = get_formatted_time_string(flight['departure']['actual'])
-        landing_time = get_formatted_time_string(
-            flight['arrival']['actual'] or flight['arrival']['scheduled'],
-            prefix="Scheduled: " if not flight['arrival']['actual'] else ""
-        )
-        st.info(f"**Take Off:** {takeoff_time} | **Landing:** {landing_time}")
-
-        # Delay information
-        delay = flight['departure']['delay']
-        if delay and delay > 0:
-            st.error(f":red[This flight was **delayed** by {delay} minutes.]")
-        else:
-            st.success("This flight appears to be **on time**.")
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-
-# --- MAIN APP ---
-
-# Load passenger data
-# passenger_df = load_excel_data()
-passenger_df = load_excel_from_env()
-
-# Create set of flight numbers (as requested)
-flight_numbers_set = get_flight_numbers_set(passenger_df)
-
-# --- MAIN PAGE CONTENT ---
-st.title("First Love Church - Live Flight Tracker")
-
-st.title("📊 Flight Statistics")
-
-# Enhanced search with examples
-st.markdown(
-    "**Search Examples:** Try searching for names, flight numbers (ET921), dates (July 11, Monday), airports (ADD, ACC), or status (active, landed)")
-search_query = st.text_input(
-    "Search flights:",
-    placeholder="Search by passenger name, flight number, date, airport, etc."
-)
-
-# Filter flights to only show those with passengers from Excel
-relevant_flights = []
-for flight in flight_data['data']:
-    passengers = get_passengers_for_flight(
-        flight['flight']['iata'],
-        flight['flight_date'],
-        passenger_df
+        <hr style="border-color: #333;">
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; text-align: center; gap: 1em;">
+            <div style="text-align: left;">
+                <strong>Departing from {details['departure']['iata']}</strong><br>
+                <small>{details['departure']['airport']}</small><br>
+                <small>{dep_dt_local.strftime('%b %d, %I:%M %p')}</small>
+            </div>
+            <div>→</div>
+            <div style="text-align: right;">
+                <strong>Arriving to <b>{details['arrival']['iata']}</b></strong><br>
+                <small>{details['arrival']['airport']}</small><br>
+                <small>{arr_dt_local.strftime('%b %d, %I:%M %p')}</small>
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <strong>Arriving {get_time_ago_string(flight['arrival_datetime_utc'])}</strong> 
+            {(f" | <span style='color: #ffad5a;'>Delayed by {details['departure']['delay']} minutes</span>") if details['departure'].get('delay') else f"| <span style='color: #44ff6699;'>On Time"}
+        </div>
+        {maps_link(details)}
+    </div>
+    """)
+def maps_link(details):
+    maps_url = create_maps_link(
+        details['departure']['airport'],
+        details['departure']['terminal'],
+        details['departure']['gate']
     )
-    if passengers:  # Only include flights with passengers from our Excel
-        relevant_flights.append(flight)
+    gate_info = ''
+    if details['departure']['gate'] and details['departure']['gate'].lower().strip() != 'n/a':
+        gate_info = f"Gate: {details['departure']['gate'] or 'N/A'}&nbsp;&nbsp;&nbsp;"
+    return f'<br>{gate_info}<a href="{maps_url}" target="_blank" class="maps-button" style="background-color: #00000022; color: #ffffff99; font-weight: 600; text-decoration:none; padding: 2px; padding-right: 10px; border-radius: 4px">⌖ Open in Maps</a>'
 
-print(relevant_flights, 'relevant_flights')
 
-# Apply search filter
-filtered_flights = search_flights(search_query, relevant_flights, passenger_df)
-if not passenger_df.empty:
-    # Left-aligned columns with metrics
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    with col1:
-        st.markdown(f"<div style='text-align: left; color: #ffffff66'><strong>Total Passengers:</strong> {len(passenger_df)}</div>",
-                    unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div style='text-align: left; color: #ffffff66'><strong>Unique Flights:</strong> {len(flight_numbers_set)}</div>",
-                    unsafe_allow_html=True)
-    with col3:
-        st.markdown(
-            f"<div style='text-align: left; color: #ffffff66'><strong>Active Flights:</strong> {len([f for f in relevant_flights if f['flight_status'] == 'active'])}</div>",
-            unsafe_allow_html=True)
-    with col4:
-        st.markdown(
-            f"<div style='text-align: left; color: #ffffff66'><strong>Landed Flights:</strong> {len([f for f in relevant_flights if f['flight_status'] == 'landed'])}</div>",
-            unsafe_allow_html=True)
+# --- MAIN APP LOGIC ---
+passenger_df = load_excel_from_env()
+all_people, all_flights = process_data(passenger_df, flight_data)
+display_statistics(all_people, all_flights)
+st.markdown("---")
+st.markdown(
+    "**Search Examples:** `John Doe`, `flight ET921`, `people landed yesterday`, `delayed`, `FLC Dallas`")
+# search_query = st.text_input("Search for flights or people...",
+#                              placeholder="Search by name, flight, date, status, campus...",
+#                              label_visibility="collapsed")
+# Check for search query params to enable clickable passenger tags
+query_params = st.query_params.to_dict()
+# Use the URL param as the default for the text input, otherwise default to empty
+print(query_params, "query_params")
+search_from_url = query_params.get("search", "")
 
-    # Show passenger distribution with searchable dropdown
-    if 'arrival_info' in passenger_df.columns:
-        st.markdown("### Passengers per Flight")
+search_query = st.text_input("Search for flights or people...",
+                             value=search_from_url, # Set the value from the URL
+                             placeholder="Search by name, flight, date, status, campus...",
+                             label_visibility="collapsed")
+results = search_and_filter(search_query, all_people, all_flights)
 
-        # Get flight counts
-        flight_counts = passenger_df['arrival_info'].str.split(',').explode().str.strip().value_counts()
+# Use a timezone relevant to your location in Texas
+local_timezone = pytz.timezone("America/Chicago")
 
-        # Create searchable dropdown for flight selection
-        flight_options = ['All Flights'] + list(flight_counts.index)
-        selected_flight = st.selectbox(
-            "Search and select a flight:",
-            options=flight_options,
-            index=0,
-            help="Type to search for a specific flight number"
-        )
-
-        # Display results based on selection
-        if selected_flight == 'All Flights':
-            # Show all flights in a nicely formatted table
-            st.markdown("**All Flight Passenger Counts:**")
-
-            # Create a DataFrame for better display
-            flight_data = []
-            for flight, count in flight_counts.items():
-                flight_data.append({
-                    'Flight Number': flight,
-                    'Passengers': count,
-                    # 'Status': 'Multiple' if count > 1 else 'Single'
-                })
-
-            flight_df = pd.DataFrame(flight_data)
-
-            # Display as a styled table
-            st.dataframe(
-                flight_df,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    'Flight Number': st.column_config.TextColumn(
-                        'Flight Number',
-                        width='medium'
-                    ),
-                    'Passengers': st.column_config.NumberColumn(
-                        'Passengers',
-                        width='small'
-                    ),
-                    'Status': st.column_config.TextColumn(
-                        'Status',
-                        width='small'
-                    )
-                }
-            )
-        else:
-            # Show details for selected flight
-            passenger_count = flight_counts[selected_flight]
-            st.markdown(f"**{selected_flight}:** {passenger_count} passenger{'s' if passenger_count > 1 else ''}")
-
-            # Show passenger details for this flight
-            flight_passengers = passenger_df[passenger_df['arrival_info'].str.contains(selected_flight, na=False)]
-            if not flight_passengers.empty:
-                st.markdown("**Passenger Details:**")
-
-                # Display available columns (excluding arrival_info since it's already shown)
-                display_columns = [col for col in flight_passengers.columns if col != 'arrival_info']
-
-                if display_columns:
-                    st.dataframe(
-                        flight_passengers[display_columns],
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                else:
-                    st.dataframe(
-                        flight_passengers,
-                        use_container_width=True,
-                        hide_index=True
-                    )
-# Display results
-if not filtered_flights:
+if not results:
     if search_query:
-        st.warning("No flights found matching your search criteria.")
+        _, keywords = parse_query(search_query)
+        status_part = ""
+        if keywords['delayed']: status_part = "delayed "
+        if keywords['landed']: status_part = "landed "
+        type_part = "result"
+        if keywords['person'] and not keywords['flight']: type_part = "person"
+        if keywords['flight'] and not keywords['person']: type_part = "flight"
+        st.warning(f"Found no {status_part}{type_part} for '{search_query}'")
     else:
-        st.warning("No flights found with passengers from your Excel file.")
+        st.info("Showing all flights by default. Start typing to search for people and flights.")
 else:
-    st.markdown(f"**Found {len(filtered_flights)} flight{'s' if len(filtered_flights) > 1 else ''}**")
-
-    for flight in filtered_flights:
-        display_flight_card(flight, passenger_df)
+    st.markdown(f"**Found {len(results)} result{'s' if len(results) != 1 else ''}**")
+    for item in results:
+        if item['type'] == 'person':
+            flights = [a for a in all_flights if a['type'] == 'flight' and item in a['passengers']]
+            display_person_card(item, local_timezone, flights=flights)
+        elif item['type'] == 'flight':
+            display_flight_card(item, local_timezone)
