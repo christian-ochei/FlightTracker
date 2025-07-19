@@ -114,7 +114,7 @@ flight_data = {
 def load_excel_data():
     """Load and process the Excel file containing passenger information."""
     # Try to read the Excel file
-    df = pd.read_excel('sample - FLNA Travel Info Data.xlsx')
+    df = pd.read_excel('FLNA - Accra Travel Info.xlsx')
 
     # Clean column names (remove extra spaces, standardize)
     df.columns = df.columns.str.strip().str.replace(' ', '_').str.lower()
@@ -122,6 +122,7 @@ def load_excel_data():
     # Expected columns (adjust based on your actual Excel structure)
     # ['name', 'flight_number', 'departure_date', 'seat', 'class', 'phone', 'email']
     print(df)
+
 
     # If the actual columns are different, map them here
     # For example, if your Excel has different column names:
@@ -185,24 +186,19 @@ def excel_to_json_string():
 
 # excel_to_json_string()
 # exit()
-
 def load_excel_from_env():
     """
     Load Excel data from EXCEL_SHEET environment variable.
-
     Returns:
         pd.DataFrame: DataFrame loaded from the environment variable JSON string
-
     Raises:
         ValueError: If EXCEL_SHEET environment variable is not set or empty
         json.JSONDecodeError: If the JSON string is invalid
     """
     # Get the JSON string from environment variable
     json_string = os.getenv('EXCEL_SHEET')
-
     if not json_string:
         raise ValueError("EXCEL_SHEET environment variable is not set or is empty")
-
     try:
         # Parse JSON string to Python objects
         data = json.loads(json_string)
@@ -222,35 +218,6 @@ def load_excel_from_env():
 
     except json.JSONDecodeError as e:
         raise json.JSONDecodeError(f"Invalid JSON in EXCEL_SHEET environment variable: {e}")
-
-
-# def load_excel_from_env():
-#     """
-#     Load Excel data from EXCEL_SHEET environment variable.
-#     Now handles the new format with personid, phone, campus, priority, leaving_city, etc.
-#     """
-#     # Use the new JSON data from the document
-#     json_string = """[{"full_name":"Amy Jones","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"11:20:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET519, ET921","departure_date":"2025-08-07T00:00:00.000","departure_time":"12:20:00","departing_airline":"Ethiopian Airlines","departure_info":"ET920, ET518","personid":"P001","phone":"+1-555-0101","campus":"FLC Dallas","priority":1,"leaving_city":"Dallas"},{"full_name":"Amy Jones","arrival_date":"2025-07-30T00:00:00.000","arrival_time":"14:30:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET920","departure_date":"2025-08-08T00:00:00.000","departure_time":"16:45:00","departing_airline":"Ethiopian Airlines","departure_info":"ET921","personid":"P001","phone":"+1-555-0101","campus":"FLC Dallas","priority":2,"leaving_city":"Belgium"},{"full_name":"Jonathan Brown","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"06:00:00","arriving_airline":"Delta Airlines","arrival_info":"DL 156","departure_date":"2025-08-07T00:00:00.000","departure_time":"06:00:00","departing_airline":"Delta Airlines","departure_info":"DL2639","personid":"P002","phone":"+1-555-0102","campus":"FLC Houston","priority":1,"leaving_city":"Dallas"},{"full_name":"Emily J","arrival_date":"2025-07-28T00:00:00.000","arrival_time":"09:00:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET921","departure_date":"2025-08-09T00:00:00.000","departure_time":"09:25:00","departing_airline":"Air France","departure_info":"AF 2348","personid":"P003","phone":"+1-555-0103","campus":"FLC Austin","priority":1,"leaving_city":"Dallas"},{"full_name":"Annie Greene","arrival_date":"2025-07-28T00:00:00.000","arrival_time":"09:00:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET921","departure_date":"2025-08-07T00:00:00.000","departure_time":"06:00:00","departing_airline":"Air France","departure_info":"AF 2348","personid":"P004","phone":"+1-555-0104","campus":"FLC San Antonio","priority":1,"leaving_city":"Dallas"},{"full_name":"Jared Hopkins","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"07:15:00","arriving_airline":"Delta Airlines","arrival_info":"DL 156","departure_date":"2025-08-10T00:00:00.000","departure_time":"09:25:00","departing_airline":"Delta Airlines","departure_info":"DL157, DL496","personid":"P005","phone":"+1-555-0105","campus":"FLC Dallas","priority":1,"leaving_city":"Dallas"},{"full_name":"Brett Below","arrival_date":"2025-07-23T00:00:00.000","arrival_time":"13:40:00","arriving_airline":"Qatar Airways","arrival_info":"Qatar QR706, QR1423","departure_date":"2025-08-13T00:00:00.000","departure_time":"15:10:00","departing_airline":"Qatar Airways","departure_info":"QR1423 , QR701","personid":"P006","phone":"+1-555-0106","campus":"FLC Fort Worth","priority":1,"leaving_city":"Dallas"},{"full_name":"Arielle Jones","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"09:05:00","arriving_airline":"United Airlines","arrival_info":"UA996","departure_date":"2025-08-09T00:00:00.000","departure_time":"22:00:00","departing_airline":"United Airlines","departure_info":"UA996","personid":"P007","phone":"+1-555-0107","campus":"FLC Plano","priority":1,"leaving_city":"Dallas"},{"full_name":"Hugh James","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"01:40:00","arriving_airline":"Africa World Airlines","arrival_info":"AWA 215","departure_date":"2025-08-09T00:00:00.000","departure_time":"06:30:00","departing_airline":"Africa World Airlines","departure_info":"AWA 208","personid":"P008","phone":"+1-555-0108","campus":"FLC Irving","priority":1,"leaving_city":"Dallas"},{"full_name":"David Abram","arrival_date":"2025-07-21T00:00:00.000","arrival_time":"05:00:00","arriving_airline":"Royal Air Maroc","arrival_info":"RAM 515","departure_date":"2025-07-18T00:00:00.000","departure_time":"06:05:00","departing_airline":"Royal Air Maroc","departure_info":"AT514, AT210","personid":"P009","phone":"+1-555-0109","campus":"FLC Dallas","priority":1,"leaving_city":"Dallas"},{"full_name":"Cris Ng","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"09:05:00","arriving_airline":"United Airlines","arrival_info":"UA996","departure_date":"2025-08-09T00:00:00.000","departure_time":"22:00:00","departing_airline":"United Airlines","departure_info":"UA996","personid":"P010","phone":"+1-555-0110","campus":"FLC Richardson","priority":1,"leaving_city":"Dallas"}]"""
-#
-#     try:
-#         # Parse JSON string to Python objects
-#         data = json.loads(json_string)
-#
-#         # Convert to DataFrame
-#         df = pd.DataFrame(data)
-#
-#         print(f"Successfully loaded DataFrame with shape: {df.shape}")
-#         print(f"Columns: {list(df.columns)}")
-#
-#         # Convert datetime fields
-#         df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
-#         df['departure_datetime'] = pd.to_datetime(
-#             df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
-#
-#         return df
-#
-#     except json.JSONDecodeError as e:
-#         raise json.JSONDecodeError(f"Invalid JSON in EXCEL_SHEET environment variable: {e}")
 
 
 def json_string_to_dataframe(json_string):
@@ -305,7 +272,7 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
     flight_list = []
 
     # Group by personid to consolidate multiple flight entries per person
-    print(passenger_df, "passenger_df")
+    print(passenger_df,'passenger_dfpassenger_df')
     grouped = passenger_df.groupby('personid')
 
     for personid, person_flights in grouped:
@@ -321,8 +288,8 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
         flight_details = []
 
         for _, flight_row in person_flights.iterrows():
-            arrival_flights = [f.strip() for f in flight_row['arrival_info'].replace(' ', '').split(',')]
-            departure_flights = [f.strip() for f in flight_row['departure_info'].replace(' ', '').split(',')]
+            arrival_flights = [f.strip() for f in str(flight_row['arrival_info']).replace(' ', '').split(',')] if flight_row['arrival_info'] else []
+            departure_flights = [f.strip() for f in str(flight_row['departure_info']).replace(' ', '').split(',')] if flight_row['departure_info'] else []
 
             all_arrival_flights.extend(arrival_flights)
             all_departure_flights.extend(departure_flights)
@@ -330,7 +297,7 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
             # Store flight details with priority and leaving city
             flight_details.append({
                 'priority': flight_row['priority'],
-                'leaving_city': flight_row['leaving_city'],
+                'leaving_city': flight_row['leaving_from_city'],
                 'arriving_airline': flight_row['arriving_airline'],
                 'departing_airline': flight_row['departing_airline'],
                 'arrival_datetime': flight_row['arrival_datetime'],
@@ -836,4 +803,3 @@ else:
             display_person_card(item, local_timezone, flights=flights)
         elif item['type'] == 'flight':
             display_flight_card(item, local_timezone)
-
