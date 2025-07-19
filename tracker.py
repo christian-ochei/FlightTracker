@@ -835,3 +835,4 @@ else:
             display_person_card(item, local_timezone, flights=flights)
         elif item['type'] == 'flight':
             display_flight_card(item, local_timezone)
+
