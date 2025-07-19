@@ -198,12 +198,12 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
     for _, row in passenger_df.iterrows():
         arrival_flights = [f.strip() for f in row['arrival_info'].replace(' ', '').split(',')]
         person = {
-            'type': 'person', 'full_name': row['full_name'], 'campus': row['campus'],
+            'type': 'person', 'full_name': row['full_name'], 'campus': row.get('campus', ''),
             'arrival_datetime_utc': row['arrival_datetime'].tz_localize('UTC'),
             'departure_datetime_utc': row['departure_datetime'].tz_localize('UTC'),
             'arrival_flights': arrival_flights,
             'departure_flights': [f.strip() for f in row['departure_info'].replace(' ', '').split(',')],
-            'search_text': f"{row['full_name']} {row['campus']} {' '.join(arrival_flights)}".lower(), 'match_tip': ''
+            'search_text': f"{row['full_name']} {row.get('campus', '')} {' '.join(arrival_flights)}".lower(), 'match_tip': ''
         }
         people_list.append(person)
 
