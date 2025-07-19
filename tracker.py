@@ -74,6 +74,8 @@ def load_excel_data():
     # Parse dates if they exist
     if 'departure_date' in df.columns:
         df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+    df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
+    df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
     return df
 
 def copy_to_clipboard(text):
@@ -139,7 +141,8 @@ def load_excel_from_env():
 
         print(f"Successfully loaded DataFrame with shape: {df.shape}")
         print(f"Columns: {list(df.columns)}")
-
+        df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
+        df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
         return df
 
     except json.JSONDecodeError as e:
