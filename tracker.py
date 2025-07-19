@@ -581,7 +581,7 @@ def display_flight_card(flight: Dict, local_tz):
             </div>
         </div>
         <div style="margin-top: 15px;">
-            <strong>Arriving {get_time_ago_string(flight['arrival_datetime_utc'])}</strong> 
+            <strong>Arival: {get_time_ago_string(flight['arrival_datetime_utc'])}</strong> 
             {(f" | <span style='color: #ffad5a;'>Delayed by {details['departure']['delay']} minutes</span>") if details['departure'].get('delay') else f"| <span style='color: #44ff6699;'>On Time"}
         </div>
         {maps_link(details)}
