@@ -460,10 +460,11 @@ def search_and_filter(query: str, all_people: List[Dict], all_flights: List[Dict
                 dest_iata = item['details']['arrival']['iata']
                 text_to_search += f" {IATA_COUNTRY_MAP.get(dest_iata, '').lower()}"
             elif item['type'] == 'person':
-                final_flight_iata = item['arrival_flights'][-1]
-                final_flight = next((f for f in all_flights if f['details']['flight']['iata'] in final_flight_iata),
-                                    None)
-                if final_flight: text_to_search += f" {IATA_COUNTRY_MAP.get(final_flight['details']['arrival']['iata'], '').lower()}"
+                if item['arrival_flights']:
+                    final_flight_iata = item['arrival_flights'][-1]
+                    final_flight = next((f for f in all_flights if f['details']['flight']['iata'] in final_flight_iata),
+                                        None)
+                    if final_flight: text_to_search += f" {IATA_COUNTRY_MAP.get(final_flight['details']['arrival']['iata'], '').lower()}"
             if not all(term in text_to_search for term in terms):
                 is_match = False
 
