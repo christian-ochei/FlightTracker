@@ -1,4 +1,3 @@
-
 # airlines = get_flights_by_airport(flight_numbers)
 
 
@@ -18,7 +17,9 @@ import pytz
 # --- MOCK DATA (As provided in the original script) ---
 # In a real app, this would come from an API call
 import streamlit as st
-st.set_page_config(page_title="First Love Church - Live Flight Tracker", layout="wide", initial_sidebar_state="expanded")
+
+st.set_page_config(page_title="First Love Church - Live Flight Tracker", layout="wide",
+                   initial_sidebar_state="expanded")
 
 import pandas as pd
 from datetime import datetime, timedelta, timezone
@@ -35,7 +36,77 @@ flight_data = {
         "count": 2,
         "total": 2
     },
-    "data": [{'flight_date': '2025-07-15', 'flight_status': 'active', 'departure': {'airport': 'John F Kennedy International', 'timezone': 'America/New_York', 'iata': 'JFK', 'icao': 'KJFK', 'terminal': '8', 'gate': None, 'delay': 26, 'scheduled': '2025-07-15T01:20:00+00:00', 'estimated': '2025-07-15T01:20:00+00:00', 'actual': '2025-07-15T01:45:00+00:00', 'estimated_runway': '2025-07-15T01:45:00+00:00', 'actual_runway': '2025-07-15T01:45:00+00:00'}, 'arrival': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': 'HIA', 'gate': None, 'baggage': '7', 'scheduled': '2025-07-15T20:45:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '706', 'iata': 'QR706', 'icao': 'QTR706', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Bole International', 'timezone': 'Africa/Addis_Ababa', 'iata': 'ADD', 'icao': 'HAAB', 'terminal': '2', 'gate': 'A10', 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T11:20:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET', 'icao': 'ETH'}, 'flight': {'number': '921', 'iata': 'ET921', 'icao': 'ETH921', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-15', 'flight_status': 'active', 'departure': {'airport': 'Bole International', 'timezone': 'Africa/Addis_Ababa', 'iata': 'ADD', 'icao': 'HAAB', 'terminal': '2', 'gate': 'A10', 'delay': 24, 'scheduled': '2025-07-15T08:40:00+00:00', 'estimated': '2025-07-15T08:40:00+00:00', 'actual': '2025-07-15T09:03:00+00:00', 'estimated_runway': '2025-07-15T09:03:00+00:00', 'actual_runway': '2025-07-15T09:03:00+00:00'}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-15T11:20:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET', 'icao': 'ETH'}, 'flight': {'number': '921', 'iata': 'ET921', 'icao': 'ETH921', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Hartsfield-jackson Atlanta International', 'timezone': 'America/New_York', 'iata': 'ATL', 'icao': 'KATL', 'terminal': 'I', 'gate': None, 'delay': None, 'scheduled': '2025-07-16T10:35:00+00:00', 'estimated': '2025-07-16T10:35:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Bole International', 'timezone': 'Africa/Addis_Ababa', 'iata': 'ADD', 'icao': 'HAAB', 'terminal': '2', 'gate': None, 'baggage': None, 'scheduled': '2025-07-17T07:50:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET', 'icao': 'ETH'}, 'flight': {'number': '519', 'iata': 'ET519', 'icao': 'ETH519', 'codeshared': None}, 'aircraft': None, 'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled', 'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00', 'estimated': '2025-07-16T08:40:00+00:00', 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC', 'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None, 'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None, 'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'}, 'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None}, 'aircraft': None, 'live': None}]
+    "data": [{'flight_date': '2025-07-15', 'flight_status': 'active',
+              'departure': {'airport': 'John F Kennedy International', 'timezone': 'America/New_York', 'iata': 'JFK',
+                            'icao': 'KJFK', 'terminal': '8', 'gate': None, 'delay': 26,
+                            'scheduled': '2025-07-15T01:20:00+00:00', 'estimated': '2025-07-15T01:20:00+00:00',
+                            'actual': '2025-07-15T01:45:00+00:00', 'estimated_runway': '2025-07-15T01:45:00+00:00',
+                            'actual_runway': '2025-07-15T01:45:00+00:00'},
+              'arrival': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH', 'icao': 'OTHH',
+                          'terminal': 'HIA', 'gate': None, 'baggage': '7', 'scheduled': '2025-07-15T20:45:00+00:00',
+                          'delay': None, 'estimated': None, 'actual': None, 'estimated_runway': None,
+                          'actual_runway': None}, 'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'},
+              'flight': {'number': '706', 'iata': 'QR706', 'icao': 'QTR706', 'codeshared': None}, 'aircraft': None,
+              'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
+                              'departure': {'airport': 'Bole International', 'timezone': 'Africa/Addis_Ababa',
+                                            'iata': 'ADD', 'icao': 'HAAB', 'terminal': '2', 'gate': 'A10',
+                                            'delay': None, 'scheduled': '2025-07-16T08:40:00+00:00',
+                                            'estimated': '2025-07-16T08:40:00+00:00', 'actual': None,
+                                            'estimated_runway': None, 'actual_runway': None},
+                              'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC',
+                                          'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None,
+                                          'scheduled': '2025-07-16T11:20:00+00:00', 'delay': None, 'estimated': None,
+                                          'actual': None, 'estimated_runway': None, 'actual_runway': None},
+                              'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET', 'icao': 'ETH'},
+                              'flight': {'number': '921', 'iata': 'ET921', 'icao': 'ETH921', 'codeshared': None},
+                              'aircraft': None, 'live': None}, {'flight_date': '2025-07-15', 'flight_status': 'active',
+                                                                'departure': {'airport': 'Bole International',
+                                                                              'timezone': 'Africa/Addis_Ababa',
+                                                                              'iata': 'ADD', 'icao': 'HAAB',
+                                                                              'terminal': '2', 'gate': 'A10',
+                                                                              'delay': 24,
+                                                                              'scheduled': '2025-07-15T08:40:00+00:00',
+                                                                              'estimated': '2025-07-15T08:40:00+00:00',
+                                                                              'actual': '2025-07-15T09:03:00+00:00',
+                                                                              'estimated_runway': '2025-07-15T09:03:00+00:00',
+                                                                              'actual_runway': '2025-07-15T09:03:00+00:00'},
+                                                                'arrival': {'airport': 'Kotoka',
+                                                                            'timezone': 'Africa/Accra', 'iata': 'ACC',
+                                                                            'icao': 'DGAA', 'terminal': '3',
+                                                                            'gate': None, 'baggage': None,
+                                                                            'scheduled': '2025-07-15T11:20:00+00:00',
+                                                                            'delay': None, 'estimated': None,
+                                                                            'actual': None, 'estimated_runway': None,
+                                                                            'actual_runway': None},
+                                                                'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET',
+                                                                            'icao': 'ETH'},
+                                                                'flight': {'number': '921', 'iata': 'ET921',
+                                                                           'icao': 'ETH921', 'codeshared': None},
+                                                                'aircraft': None, 'live': None},
+             {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
+              'departure': {'airport': 'Hartsfield-jackson Atlanta International', 'timezone': 'America/New_York',
+                            'iata': 'ATL', 'icao': 'KATL', 'terminal': 'I', 'gate': None, 'delay': None,
+                            'scheduled': '2025-07-16T10:35:00+00:00', 'estimated': '2025-07-16T10:35:00+00:00',
+                            'actual': None, 'estimated_runway': None, 'actual_runway': None},
+              'arrival': {'airport': 'Bole International', 'timezone': 'Africa/Addis_Ababa', 'iata': 'ADD',
+                          'icao': 'HAAB', 'terminal': '2', 'gate': None, 'baggage': None,
+                          'scheduled': '2025-07-17T07:50:00+00:00', 'delay': None, 'estimated': None, 'actual': None,
+                          'estimated_runway': None, 'actual_runway': None},
+              'airline': {'name': 'Ethiopian Airlines', 'iata': 'ET', 'icao': 'ETH'},
+              'flight': {'number': '519', 'iata': 'ET519', 'icao': 'ETH519', 'codeshared': None}, 'aircraft': None,
+              'live': None}, {'flight_date': '2025-07-16', 'flight_status': 'scheduled',
+                              'departure': {'airport': 'Doha International', 'timezone': 'Asia/Qatar', 'iata': 'DOH',
+                                            'icao': 'OTHH', 'terminal': None, 'gate': None, 'delay': None,
+                                            'scheduled': '2025-07-16T08:40:00+00:00',
+                                            'estimated': '2025-07-16T08:40:00+00:00', 'actual': None,
+                                            'estimated_runway': None, 'actual_runway': None},
+                              'arrival': {'airport': 'Kotoka', 'timezone': 'Africa/Accra', 'iata': 'ACC',
+                                          'icao': 'DGAA', 'terminal': '3', 'gate': None, 'baggage': None,
+                                          'scheduled': '2025-07-16T13:40:00+00:00', 'delay': None, 'estimated': None,
+                                          'actual': None, 'estimated_runway': None, 'actual_runway': None},
+                              'airline': {'name': 'Qatar Airways', 'iata': 'QR', 'icao': 'QTR'},
+                              'flight': {'number': '1423', 'iata': 'QR1423', 'icao': 'QTR1423', 'codeshared': None},
+                              'aircraft': None, 'live': None}]
 }
 
 
@@ -74,12 +145,12 @@ def load_excel_data():
     # Parse dates if they exist
     # if 'departure_date' in df.columns:
     #     df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
-    df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
-    df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
+    # df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
+    # df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
     return df
 
-def copy_to_clipboard(text):
 
+def copy_to_clipboard(text):
     """
     Copy string to clipboard using pyperclip (cross-platform).
 
@@ -100,6 +171,7 @@ def copy_to_clipboard(text):
         print(f"Error copying to clipboard: {e}")
         return False
 
+
 def excel_to_json_string():
     df = load_excel_data()
     # Convert to JSON string with no indentation or newlines
@@ -110,6 +182,9 @@ def excel_to_json_string():
     copy_to_clipboard(json_string.replace('"', '\\"'))
     return json_string
 
+
+# excel_to_json_string()
+# exit()
 
 def load_excel_from_env():
     """
@@ -149,6 +224,35 @@ def load_excel_from_env():
         raise json.JSONDecodeError(f"Invalid JSON in EXCEL_SHEET environment variable: {e}")
 
 
+# def load_excel_from_env():
+#     """
+#     Load Excel data from EXCEL_SHEET environment variable.
+#     Now handles the new format with person_id, phone, campus, priority, leaving_city, etc.
+#     """
+#     # Use the new JSON data from the document
+#     json_string = """[{"full_name":"Amy Jones","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"11:20:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET519, ET921","departure_date":"2025-08-07T00:00:00.000","departure_time":"12:20:00","departing_airline":"Ethiopian Airlines","departure_info":"ET920, ET518","person_id":"P001","phone":"+1-555-0101","campus":"FLC Dallas","priority":1,"leaving_city":"Dallas"},{"full_name":"Amy Jones","arrival_date":"2025-07-30T00:00:00.000","arrival_time":"14:30:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET920","departure_date":"2025-08-08T00:00:00.000","departure_time":"16:45:00","departing_airline":"Ethiopian Airlines","departure_info":"ET921","person_id":"P001","phone":"+1-555-0101","campus":"FLC Dallas","priority":2,"leaving_city":"Belgium"},{"full_name":"Jonathan Brown","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"06:00:00","arriving_airline":"Delta Airlines","arrival_info":"DL 156","departure_date":"2025-08-07T00:00:00.000","departure_time":"06:00:00","departing_airline":"Delta Airlines","departure_info":"DL2639","person_id":"P002","phone":"+1-555-0102","campus":"FLC Houston","priority":1,"leaving_city":"Dallas"},{"full_name":"Emily J","arrival_date":"2025-07-28T00:00:00.000","arrival_time":"09:00:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET921","departure_date":"2025-08-09T00:00:00.000","departure_time":"09:25:00","departing_airline":"Air France","departure_info":"AF 2348","person_id":"P003","phone":"+1-555-0103","campus":"FLC Austin","priority":1,"leaving_city":"Dallas"},{"full_name":"Annie Greene","arrival_date":"2025-07-28T00:00:00.000","arrival_time":"09:00:00","arriving_airline":"Ethiopian Airlines","arrival_info":"ET921","departure_date":"2025-08-07T00:00:00.000","departure_time":"06:00:00","departing_airline":"Air France","departure_info":"AF 2348","person_id":"P004","phone":"+1-555-0104","campus":"FLC San Antonio","priority":1,"leaving_city":"Dallas"},{"full_name":"Jared Hopkins","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"07:15:00","arriving_airline":"Delta Airlines","arrival_info":"DL 156","departure_date":"2025-08-10T00:00:00.000","departure_time":"09:25:00","departing_airline":"Delta Airlines","departure_info":"DL157, DL496","person_id":"P005","phone":"+1-555-0105","campus":"FLC Dallas","priority":1,"leaving_city":"Dallas"},{"full_name":"Brett Below","arrival_date":"2025-07-23T00:00:00.000","arrival_time":"13:40:00","arriving_airline":"Qatar Airways","arrival_info":"Qatar QR706, QR1423","departure_date":"2025-08-13T00:00:00.000","departure_time":"15:10:00","departing_airline":"Qatar Airways","departure_info":"QR1423 , QR701","person_id":"P006","phone":"+1-555-0106","campus":"FLC Fort Worth","priority":1,"leaving_city":"Dallas"},{"full_name":"Arielle Jones","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"09:05:00","arriving_airline":"United Airlines","arrival_info":"UA996","departure_date":"2025-08-09T00:00:00.000","departure_time":"22:00:00","departing_airline":"United Airlines","departure_info":"UA996","person_id":"P007","phone":"+1-555-0107","campus":"FLC Plano","priority":1,"leaving_city":"Dallas"},{"full_name":"Hugh James","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"01:40:00","arriving_airline":"Africa World Airlines","arrival_info":"AWA 215","departure_date":"2025-08-09T00:00:00.000","departure_time":"06:30:00","departing_airline":"Africa World Airlines","departure_info":"AWA 208","person_id":"P008","phone":"+1-555-0108","campus":"FLC Irving","priority":1,"leaving_city":"Dallas"},{"full_name":"David Abram","arrival_date":"2025-07-21T00:00:00.000","arrival_time":"05:00:00","arriving_airline":"Royal Air Maroc","arrival_info":"RAM 515","departure_date":"2025-07-18T00:00:00.000","departure_time":"06:05:00","departing_airline":"Royal Air Maroc","departure_info":"AT514, AT210","person_id":"P009","phone":"+1-555-0109","campus":"FLC Dallas","priority":1,"leaving_city":"Dallas"},{"full_name":"Cris Ng","arrival_date":"2025-07-29T00:00:00.000","arrival_time":"09:05:00","arriving_airline":"United Airlines","arrival_info":"UA996","departure_date":"2025-08-09T00:00:00.000","departure_time":"22:00:00","departing_airline":"United Airlines","departure_info":"UA996","person_id":"P010","phone":"+1-555-0110","campus":"FLC Richardson","priority":1,"leaving_city":"Dallas"}]"""
+#
+#     try:
+#         # Parse JSON string to Python objects
+#         data = json.loads(json_string)
+#
+#         # Convert to DataFrame
+#         df = pd.DataFrame(data)
+#
+#         print(f"Successfully loaded DataFrame with shape: {df.shape}")
+#         print(f"Columns: {list(df.columns)}")
+#
+#         # Convert datetime fields
+#         df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
+#         df['departure_datetime'] = pd.to_datetime(
+#             df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
+#
+#         return df
+#
+#     except json.JSONDecodeError as e:
+#         raise json.JSONDecodeError(f"Invalid JSON in EXCEL_SHEET environment variable: {e}")
+
+
 def json_string_to_dataframe(json_string):
     """
     Convert JSON string to pandas DataFrame.
@@ -166,10 +270,12 @@ def json_string_to_dataframe(json_string):
     df = pd.DataFrame(data)
 
     # If departure_date exists, convert it back to datetime
-    if 'departure_date' in df.columns:
-        df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
-
+    # if 'departure_date' in df.columns:
+    #     df['departure_date'] = pd.to_datetime(df['departure_date'], errors='coerce')
+    df['arrival_datetime'] = pd.to_datetime(df['arrival_date'].str.split('T').str[0] + ' ' + df['arrival_time'])
+    df['departure_datetime'] = pd.to_datetime(df['departure_date'].str.split('T').str[0] + ' ' + df['departure_time'])
     return df
+
 
 import os
 import streamlit as st
@@ -182,11 +288,11 @@ from dateutil.parser import parse as date_parse
 from typing import Dict, List, Any, Tuple
 
 # --- PAGE CONFIGURATION ---
-st.set_page_config(
-    page_title="FLC Live Flight & Passenger Tracker",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# st.set_page_config(
+#     page_title="FLC Live Flight & Passenger Tracker",
+#     layout="wide",
+#     initial_sidebar_state="collapsed"
+# )
 
 STOP_WORDS = {'in', 'the', 'going', 'to', 'from', 'of', 'at', 'a', 'on', 'for', 'with'}
 IATA_COUNTRY_MAP = {'ACC': 'Ghana', 'JFK': 'USA', 'DOH': 'Qatar', 'LHR': 'UK', 'ADD': 'Ethiopia', 'CDG': 'France',
@@ -198,27 +304,85 @@ def process_data(passenger_df: pd.DataFrame, flight_api_data: Dict[str, Dict]) -
     flight_api_data = flight_api_data['data']
     flight_list = []
 
-    for _, row in passenger_df.iterrows():
-        arrival_flights = [f.replace(" ", "") for f in row['arrival_info'].replace(' ', '').split(',')]
+    # Group by person_id to consolidate multiple flight entries per person
+    grouped = passenger_df.groupby('person_id')
+
+    for person_id, person_flights in grouped:
+        # Sort by priority to maintain flight order
+        person_flights = person_flights.sort_values('priority')
+
+        # Use the first row for basic person info (name, phone, campus)
+        first_row = person_flights.iloc[0]
+
+        # Collect all flights for this person
+        all_arrival_flights = []
+        all_departure_flights = []
+        flight_details = []
+
+        for _, flight_row in person_flights.iterrows():
+            arrival_flights = [f.strip() for f in flight_row['arrival_info'].replace(' ', '').split(',')]
+            departure_flights = [f.strip() for f in flight_row['departure_info'].replace(' ', '').split(',')]
+
+            all_arrival_flights.extend(arrival_flights)
+            all_departure_flights.extend(departure_flights)
+
+            # Store flight details with priority and leaving city
+            flight_details.append({
+                'priority': flight_row['priority'],
+                'leaving_city': flight_row['leaving_city'],
+                'arriving_airline': flight_row['arriving_airline'],
+                'departing_airline': flight_row['departing_airline'],
+                'arrival_datetime': flight_row['arrival_datetime'],
+                'departure_datetime': flight_row['departure_datetime'],
+                'arrival_flights': arrival_flights,
+                'departure_flights': departure_flights
+            })
+
         person = {
-            'type': 'person', 'full_name': row['full_name'], 'campus': row.get('campus', ''),
-            'arrival_datetime_utc': row['arrival_datetime'].tz_localize('UTC'),
-            'departure_datetime_utc': row['departure_datetime'].tz_localize('UTC'),
-            'arrival_flights': arrival_flights,
-            'departure_flights': [f.strip() for f in row['departure_info'].replace(' ', '').split(',')],
-            'search_text': f"{row['full_name']} {row.get('campus', '')} {' '.join(arrival_flights)}".lower(), 'match_tip': ''
+            'type': 'person',
+            'person_id': person_id,
+            'full_name': first_row['full_name'],
+            'campus': first_row['campus'],
+            'phone': first_row['phone'],
+            'arrival_datetime_utc': first_row['arrival_datetime'].tz_localize('UTC'),
+            'departure_datetime_utc': first_row['departure_datetime'].tz_localize('UTC'),
+            'arrival_flights': all_arrival_flights,
+            'departure_flights': all_departure_flights,
+            'flight_details': flight_details,  # Store detailed flight info
+            'search_text': f"{first_row['full_name']} {first_row['campus']} {first_row['phone']} {' '.join(all_arrival_flights)}".lower(),
+            'match_tip': ''
         }
         people_list.append(person)
 
+    # Process flights (unchanged logic but now includes priority info)
     for flight_details in flight_api_data:
         flight_iata = flight_details['flight']['iata']
-        passengers_on_flight = [p for p in people_list if flight_iata in p['arrival_flights']]
-        search_text = f"{flight_details['airline']['name']} {flight_details['flight']['iata']} {flight_details['departure']['airport']} {flight_details['arrival']['airport']} {flight_details['arrival']['iata']} {flight_details['flight_status']}  {flight_details['flight']['iata']} {' '.join([p['full_name'] for p in passengers_on_flight])}".lower()
+        passengers_on_flight = []
+
+        # Find passengers on this flight with their priorities
+        for p in people_list:
+            if flight_iata in p['arrival_flights']:
+                # Find the priority for this specific flight
+                for flight_detail in p['flight_details']:
+                    if flight_iata in flight_detail['arrival_flights']:
+                        passenger_info = {
+                            'person': p,
+                            'priority': flight_detail['priority'],
+                            'leaving_city': flight_detail['leaving_city']
+                        }
+                        passengers_on_flight.append(passenger_info)
+                        break
+
+        search_text = f"{flight_details['airline']['name']} {flight_details['flight']['iata']} {flight_details['departure']['airport']} {flight_details['arrival']['airport']} {flight_details['arrival']['iata']} {flight_details['flight_status']} {' '.join([p['person']['full_name'] for p in passengers_on_flight])}".lower()
+
         flight = {
-            'type': 'flight', 'details': flight_details, 'passengers': passengers_on_flight,
+            'type': 'flight',
+            'details': flight_details,
+            'passengers': passengers_on_flight,  # Now includes priority info
             'arrival_datetime_utc': datetime.fromisoformat(flight_details['arrival']['scheduled']).replace(
                 tzinfo=timezone.utc),
-            'search_text': search_text, 'match_tip': ''
+            'search_text': search_text,
+            'match_tip': ''
         }
         flight_list.append(flight)
 
@@ -250,8 +414,8 @@ def parse_query(query: str) -> Tuple[List[str], Dict[str, Any]]:
 
     # --- 1. Extract standard keywords ---
     keywords = {
-        'person': 'person' in tokens or 'people' in tokens,
-        'flight': 'flight' in tokens or 'plane' in tokens,
+        'person': 'person' in tokens or 'people' in tokens or 'member' in tokens or 'members' in tokens,
+        'flight': 'flight' in tokens or 'plane' in tokens or 'flights' in tokens or 'planes' in tokens,
         'landed': 'landed' in tokens,
         'landing': 'landing' in tokens,
         'delayed': 'delayed' in tokens,
@@ -261,7 +425,7 @@ def parse_query(query: str) -> Tuple[List[str], Dict[str, Any]]:
     }
 
     # --- 2. Separate potential search terms from keywords ---
-    potential_search_terms = [t for t in tokens if t not in keywords]
+    potential_search_terms = [t for t in tokens if t not in ['person', 'people', 'member', 'members', 'flight', 'landed', 'landing', 'delayed', 'on time', 'today', 'yesterday']]
 
     # --- 3. Intelligently find and parse date parts ---
     date_parts = []
@@ -286,6 +450,7 @@ def parse_query(query: str) -> Tuple[List[str], Dict[str, Any]]:
             # If parsing fails, it wasn't a valid date. Add the parts back to the search terms.
             final_search_terms.extend(date_parts)
 
+    print(final_search_terms, keywords)
     # Return the search terms that were NOT identified as part of a date
     return final_search_terms, keywords
 
@@ -332,6 +497,8 @@ def search_and_filter(query: str, all_people: List[Dict], all_flights: List[Dict
             if terms:
                 if item['type'] == 'flight':
                     for p in item['passengers']:
+                        p = p['person']
+                        # print('p\n\n\n', p, '\n\np')
                         if any(term in p['full_name'].lower() for term in terms):
                             item['match_tip'] = f"✓ {p['full_name']} found"
                             break
@@ -386,7 +553,7 @@ def display_statistics(people: List[Dict], flights: List[Dict]):
             font-size: 2rem; /* Adjust the font size as needed */
             font-weight: 600
         }
-        
+
         small {
             font-size: 18px;
         }
@@ -422,7 +589,8 @@ def display_statistics(people: List[Dict], flights: List[Dict]):
               f"{sum(len(f['passengers']) for f in flights if f['details']['flight_status'] == 'landed')}")
     c3.metric("Total Flights", f"{len(flights)}")
     c4.metric("Flights Landed", f"{sum(1 for f in flights if f['details']['flight_status'] == 'landed')}")
-    c5.metric("Flights Delayed", f"{sum(1 for f in flights if f['details']['departure'].get('delay', 0) and f['details']['departure'].get('delay', 0) > 0)}")
+    c5.metric("Flights Delayed",
+              f"{sum(1 for f in flights if f['details']['departure'].get('delay', 0) and f['details']['departure'].get('delay', 0) > 0)}")
 
 
 def display_person_card(person: Dict, local_tz, flights):
@@ -430,41 +598,59 @@ def display_person_card(person: Dict, local_tz, flights):
     status = "Landed" if person['arrival_datetime_utc'] < datetime.now(timezone.utc) else "En Route"
     status_color = get_dynamic_status_color(person['arrival_datetime_utc'], status)
 
-    # 1. Build the HTML for each clickable flight card in the grid
+    # Create phone action buttons
+    phone_number = person['phone']
+    phone_actions = f"""
+    <div style="margin-top: 10px;">
+        <a href="tel:{phone_number}" style="background-color: #4CAF5033; color: white; padding: 5px 12px; border-radius: 5px; text-decoration: none; font-size: 0.9em; margin-right: 10px;">📞 Call</a>
+        <button onclick="navigator.clipboard.writeText('{phone_number}')" style="background-color: #2196F333; color: white; padding: 5px 12px; border-radius: 5px; border: none; cursor: pointer; font-size: 0.9em;">📋 Copy Phone</button>
+    </div>
+    """
+
+    # Build flight cards with priority, leaving city, and airline info
     flight_cards_html = []
-    for flight in flights:
-        details = flight['details']
-        flight_status = details['flight_status']
-        flight_status_color = get_dynamic_status_color(flight['arrival_datetime_utc'], flight_status)
-        arr_dt_local = datetime.fromisoformat(details['arrival']['scheduled']).astimezone(local_tz)
+    for flight_detail in person['flight_details']:
+        priority = flight_detail['priority']
+        leaving_city = flight_detail['leaving_city']
+        arriving_airline = flight_detail['arriving_airline']
 
-        # The destination IATA code to be used in the search query
-        destination_iata = details['flight']['iata']
-        encoded_iata = urllib.parse.quote(destination_iata)
+        # flights = [a for a in all_flights if a['type'] == 'flight' and item in a['passengers']]
+        matching_flights = flights
+        # Find matching flight from API data # THE ISSUE IS HERE !!!!!!!!!!!!!!!!!!
+        # matching_flights = [f for f in flights if any(af in flight_detail['arrival_flights'] for af in f['details']['flight']['iata'])]
 
-        # The entire card is now a clickable link (<a> tag) with the class "itinerary-card"
-        flight_card = f"""
-        <a href="?search={encoded_iata}" target="_self" class="itinerary-card" style="border-left-color: {flight_status_color};">
-            <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 5px;">
-                ✈ {details['flight']['iata']}
-                <span style="float: right; font-weight: bold; color: {flight_status_color}; font-size: 0.9em;">{flight_status.upper()}</span>
-            </div>
-            <div style="font-size: 1em; color: #ccc; margin-bottom: 10px;">
-                {details['departure']['airport']} → <strong>{details['arrival']['airport']}</strong>
-            </div>
-            <div style="font-size: 0.85em; color: #aaa;">
-                Arrives: {arr_dt_local.strftime('%b %d, %I:%M %p')}
-                {f" | <span style='color: #ffad5a;'>Delayed</span>" if details['departure'].get('delay') else ""}
-            </div>
-        </a>
-        """
-        flight_cards_html.append(flight_card)
+        if matching_flights:
+            for flight in matching_flights:
+                details = flight['details']
+                if details['flight']['iata'] in flight_detail['arrival_flights']:
+                    flight_status = details['flight_status']
+                    flight_status_color = get_dynamic_status_color(flight['arrival_datetime_utc'], flight_status)
+                    arr_dt_local = datetime.fromisoformat(details['arrival']['scheduled']).astimezone(local_tz)
 
-    # 2. Combine the flight cards into a grid container
+                    destination_iata = details['flight']['iata']
+                    encoded_iata = urllib.parse.quote(destination_iata)
+
+                    flight_card = f"""
+                    <a href="?search={encoded_iata}" target="_self" class="itinerary-card" style="border-left-color: {flight_status_color};">
+                        <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 5px;">
+                            ✈ {details['flight']['iata']} (Priority {priority})
+                            <span style="float: right; font-weight: bold; color: {flight_status_color}; font-size: 0.9em;">{flight_status.upper()}</span>
+                        </div>
+                        <div style="font-size: 1em; color: #ccc; margin-bottom: 10px;">
+                            {arriving_airline} | {leaving_city} → <strong>{details['arrival']['airport']}</strong>
+                        </div>
+                        <div style="font-size: 0.85em; color: #aaa;">
+                            Arrives: {arr_dt_local.strftime('%b %d, %I:%M %p')}
+                            {f" | <span style='color: #ffad5a;'>Delayed</span>" if details['departure'].get('delay') else ""}
+                        </div>
+                    </a>
+                    """
+                    flight_cards_html.append(flight_card)
+
     flights_grid = f"""
     <div style="margin-top: 1.5em;">
-        <strong style="color: #ddd; display: block; margin-bottom: 10px;">Flight Itinerary ({len(flights)} {'flight' if len(flights) == 1 else 'flights'})</strong>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+        <strong style="color: #ddd; display: block; margin-bottom: 10px;">Flight Itinerary ({len(flight_cards_html)} {'flight' if len(flight_cards_html) == 1 else 'flights'})</strong>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
             {''.join(flight_cards_html)}
         </div>
     </div>
@@ -484,22 +670,23 @@ def display_person_card(person: Dict, local_tz, flights):
             transition: background-color 0.2s ease;
         }}
         .itinerary-card:hover {{
-            background-color: #3a3a3a; /* Softly lighter background on hover */
+            background-color: #3a3a3a;
             text-decoration: none;
             color: white;
         }}
     </style>
     <div style="border: 1px solid #333; border-left: 10px solid {status_color}; border-radius: 10px; padding: 20px; margin-bottom: 20px; background-color: #1a1a1a;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="margin: 0;">👤 {person['full_name']}</h3>
+            <h3 style="margin: 0;">👤 {person['full_name']} <span style="font-size: 0.6em; color: #666; font-weight: normal;">  {person['person_id']}</span></h3>
             {f'<span style="background-color: #4CAF50; color: white; padding: 3px 8px; border-radius: 5px; font-size: 0.8em;">{person["match_tip"]}</span>' if person["match_tip"] else ''}
         </div>
-        <p style="color: #aaa; margin: 0 0 1em 0;">{person['campus']}</p>
-        <hr style="border-color: #333; margin-top: 0; margin-bottom: 1em;">
-
+        <p style="color: #aaa; margin: 0 0 1em 0;">{person['campus']} | 📞 {phone_number}</p>
+        {phone_actions}
+        <hr style="border-color: #333; margin-top: 1em; margin-bottom: 1em;">
         {flights_grid}
     </div>
     """)
+
 
 def create_maps_link(airport_name, terminal, gate):
     """Create a Google Maps link for the airport gate."""
@@ -514,6 +701,7 @@ def create_maps_link(airport_name, terminal, gate):
     return f"https://www.google.com/maps/search/?api=1&query={encoded_query}"
 
 
+
 def display_flight_card(flight: Dict, local_tz):
     details = flight['details']
     status = details['flight_status']
@@ -524,10 +712,10 @@ def display_flight_card(flight: Dict, local_tz):
     # --- New: Generate clickable passenger tags ---
     passenger_tags = []
     for p in flight['passengers']:
-        encoded_name = urllib.parse.quote(p['full_name'])
+        encoded_name = urllib.parse.quote(p['person']['full_name'])
         tag = f"""
         <a href="?search={encoded_name}" target="_self" class="passenger-tag">
-            {p['full_name']}
+            {p['person']['full_name']}
         </a>
         """
         passenger_tags.append(tag)
@@ -587,6 +775,9 @@ def display_flight_card(flight: Dict, local_tz):
         {maps_link(details)}
     </div>
     """)
+
+
+
 def maps_link(details):
     maps_url = create_maps_link(
         details['departure']['airport'],
@@ -612,11 +803,11 @@ st.markdown(
 # Check for search query params to enable clickable passenger tags
 query_params = st.query_params.to_dict()
 # Use the URL param as the default for the text input, otherwise default to empty
-print(query_params, "query_params")
+# print(query_params, "query_params")
 search_from_url = query_params.get("search", "")
 
 search_query = st.text_input("Search for flights or people...",
-                             value=search_from_url, # Set the value from the URL
+                             value=search_from_url,  # Set the value from the URL
                              placeholder="Search by name, flight, date, status, campus...",
                              label_visibility="collapsed")
 results = search_and_filter(search_query, all_people, all_flights)
@@ -640,7 +831,7 @@ else:
     st.markdown(f"**Found {len(results)} result{'s' if len(results) != 1 else ''}**")
     for item in results:
         if item['type'] == 'person':
-            flights = [a for a in all_flights if a['type'] == 'flight' and item in a['passengers']]
+            flights = [a for a in all_flights if a['type'] == 'flight' and item in [a['person'] for a in a['passengers']]]
             display_person_card(item, local_timezone, flights=flights)
         elif item['type'] == 'flight':
             display_flight_card(item, local_timezone)
